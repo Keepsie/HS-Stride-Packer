@@ -1,0 +1,22 @@
+!PrefabAsset
+Id: 349070b5-22dd-48ce-96b7-37e5cefc1ec5
+SerializedVersion: {Stride: 3.1.0.1}
+Tags: []
+Hierarchy:
+    RootParts:
+        - ref!! c69e5b9e-465e-4b44-98d2-db9d84b7254d
+    Parts:
+        -   Entity:
+                Id: c69e5b9e-465e-4b44-98d2-db9d84b7254d
+                Name: Background
+                Components:
+                    857f8451601718419f2a3730e6385b35: !TransformComponent
+                        Id: 52a986c2-1cd0-45de-a9f0-701e594dc641
+                        Position: {X: 0.0, Y: 0.0, Z: -1.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    2601a996005bef48b725ff6116d66cf5: !SpaceEscape.Background.BackgroundScript,SpaceEscape.Game
+                        Id: 0a370f39-dceb-41ab-a8e5-8e3e51d66114
+                        LevelBlocks: d02dd5be-0112-4b2c-a292-bd24564c4e53:LevelBlocks
+                        SkyplaneModel: 4bc36c7c-6e1d-4021-acb3-970720e6c110:bg_00

@@ -1,0 +1,73 @@
+﻿<Application x:Class="HS.Stride.Packer.UI.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:HS.Stride.Packer.UI"
+             xmlns:converters="clr-namespace:HS.Stride.Packer.UI.Converters"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <!-- Converters -->
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+        <converters:BoolToColorConverter x:Key="BoolToColorConverter"/>
+        <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <converters:InverseStringToVisibilityConverter x:Key="InverseStringToVisibilityConverter"/>
+        <converters:IntToVisibilityConverter x:Key="IntToVisibilityConverter"/>
+        <!-- Define Stride color scheme -->
+        <SolidColorBrush x:Key="StrideBlue" Color="#4472C4"/>
+        <SolidColorBrush x:Key="StrideDark" Color="#2C5AA0"/>
+        <SolidColorBrush x:Key="StrideLight" Color="#E8F0FF"/>
+        <SolidColorBrush x:Key="BackgroundGray" Color="#F8F9FA"/>
+        
+        <!-- Define gradients -->
+        <LinearGradientBrush x:Key="StrideGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#4472C4" Offset="0"/>
+            <GradientStop Color="#2C5AA0" Offset="1"/>
+        </LinearGradientBrush>
+        
+        <LinearGradientBrush x:Key="TitleGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#E8F0FF" Offset="0"/>
+            <GradientStop Color="#F0F7FF" Offset="1"/>
+        </LinearGradientBrush>
+        
+        <!-- Button styles -->
+        <Style x:Key="StrideButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource StrideGradient}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background">
+                        <Setter.Value>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#2C5AA0" Offset="0"/>
+                                <GradientStop Color="#1E3A6F" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <!-- Phase section style -->
+        <Style x:Key="PhaseSection" TargetType="Border">
+            <Setter Property="BorderBrush" Value="#E9ECEF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Margin" Value="0,0,0,20"/>
+        </Style>
+        
+        <!-- Status panel style -->
+        <Style x:Key="StatusPanel" TargetType="Border">
+            <Setter Property="BorderThickness" Value="4,0,0,0"/>
+            <Setter Property="BorderBrush" Value="#28A745"/>
+            <Setter Property="Background" Value="#F8FFF9"/>
+            <Setter Property="Padding" Value="15"/>
+            <Setter Property="CornerRadius" Value="0,8,8,0"/>
+            <Setter Property="Margin" Value="0,10"/>
+        </Style>
+    </Application.Resources>
+</Application>

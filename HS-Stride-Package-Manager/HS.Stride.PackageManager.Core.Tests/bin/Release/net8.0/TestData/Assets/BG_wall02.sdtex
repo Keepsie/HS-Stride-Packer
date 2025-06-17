@@ -1,0 +1,8 @@
+!Texture
+Id: ec899ab5-1c97-48b7-9063-d46cc39c999a
+SerializedVersion: {Stride: 2.0.0.0}
+Tags: []
+Source: !file ../../Resources/model/BG/sourceimages/BG_wall02.jpg
+Type: !ColorTextureType
+    ColorKeyColor: {R: 255, G: 0, B: 255, A: 255}
+    PremultiplyAlpha: false

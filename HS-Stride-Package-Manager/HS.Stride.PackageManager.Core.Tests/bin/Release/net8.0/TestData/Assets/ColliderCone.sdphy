@@ -1,0 +1,8 @@
+!ColliderShapeAsset
+Id: e8baa721-503d-4fba-bc06-eaaadf8da091
+SerializedVersion: {Stride: 3.0.0.0}
+Tags: []
+ColliderShapes:
+    db830c9a5991ecc8c5ed09f2e2e5c42b: !ConeColliderShapeDesc
+        LocalOffset: {X: 0.0, Y: 0.0, Z: 0.0}
+        LocalRotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}

@@ -1,0 +1,379 @@
+﻿<UserControl x:Class="HS.Stride.Packer.UI.Views.ExportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:HS.Stride.Packer.UI.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                Background="White" Padding="30" Margin="10,0,-10,0">
+        <StackPanel>
+            <!-- Tab Header -->
+            <StackPanel Margin="0,0,0,20" HorizontalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10" HorizontalAlignment="Center">
+                    <TextBlock Text="📤" FontSize="18" Margin="0,0,8,0" 
+                             Foreground="{DynamicResource StrideBlue}"/>
+                    <TextBlock Text="Create Package" FontSize="20" 
+                             FontWeight="SemiBold" 
+                             Foreground="Black"/>
+                </StackPanel>
+                <TextBlock Text="Export your Stride project components as a reusable package" 
+                         Foreground="#6C757D" FontSize="14" HorizontalAlignment="Center"/>
+            </StackPanel>
+            
+            <!-- Project Setup -->
+            <Border Style="{DynamicResource PhaseSection}">
+                <StackPanel>
+                    <Border Background="{DynamicResource TitleGradient}" 
+                          CornerRadius="8,8,0,0" Padding="15,15,20,15"
+                          BorderBrush="#E9ECEF" BorderThickness="0,0,0,1">
+                        <TextBlock Foreground="{DynamicResource StrideDark}" 
+                                 FontWeight="SemiBold" FontSize="16">
+                            📁 Project Setup
+                        </TextBlock>
+                    </Border>
+                    
+                    <StackPanel Margin="20">
+                        <Label Content="Stride Project Solution File (.sln)" FontWeight="SemiBold"/>
+                        <Grid Margin="0,0,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Name="ProjectPathBox" 
+                                   Text="{Binding ProjectPath}" 
+                                   Padding="8"/>
+                            <Button Grid.Column="1" Content="📁 Browse" 
+                                  Command="{Binding BrowseProjectCommand}"
+                                  Padding="12,8" Margin="5,0,0,0"
+                                  Background="#F8F9FA" BorderBrush="#DEE2E6"
+                                  BorderThickness="1"/>
+                        </Grid>
+                        <TextBlock Text="{Binding ProjectValidationMessage}" 
+                                 Foreground="{Binding IsProjectValid, Converter={StaticResource BoolToColorConverter}}" 
+                                 FontSize="12" Margin="0,0,0,5"
+                                 TextWrapping="Wrap"/>
+                        <TextBlock Text="Browse for your project's .sln file" 
+                                 Foreground="#6C757D" FontSize="12" Margin="0,0,0,10"
+                                 Visibility="{Binding IsProjectValid, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                        
+                        <!-- GameStudio Warning -->
+                        <Border Background="#FFF3CD" BorderBrush="#FFE69C" BorderThickness="1" 
+                              CornerRadius="4" Padding="8" Margin="0,0,0,15"
+                              Visibility="{Binding IsProjectValid, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="⚠️ Important: Close Stride GameStudio before exporting packages" 
+                                     Foreground="#856404" FontSize="12" FontWeight="Medium"/>
+                        </Border>
+                        
+                        <Label Content="Export Location" FontWeight="SemiBold"/>
+                        <Grid Margin="0,0,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding ExportLocation}" Padding="8"/>
+                            <Button Grid.Column="1" Content="💾 Browse" 
+                                  Command="{Binding BrowseExportLocationCommand}"
+                                  Padding="12,8" Margin="5,0,0,0"
+                                  Background="#F8F9FA" BorderBrush="#DEE2E6"
+                                  BorderThickness="1"/>
+                        </Grid>
+                        <TextBlock Text="Where to save the .stridepackage file" 
+                                 Foreground="#6C757D" FontSize="12"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            
+            <!-- Package Information -->
+            <Border Style="{DynamicResource PhaseSection}">
+                <StackPanel>
+                    <!-- Phase Header -->
+                    <Border Background="{DynamicResource StrideGradient}" 
+                          CornerRadius="8,8,0,0" Padding="15,15,20,15">
+                        <TextBlock Foreground="White" FontWeight="SemiBold" FontSize="16">
+                            ℹ️ Package Information
+                        </TextBlock>
+                    </Border>
+                    
+                    <!-- Phase Content -->
+                    <Grid Margin="20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <Label FontWeight="SemiBold">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="*" Foreground="Red"/>
+                                    <TextBlock Text="Package Name"/>
+                                </StackPanel>
+                            </Label>
+                            <TextBox Text="{Binding PackageName}" Margin="0,0,0,5" Padding="8"/>
+                            <TextBlock Text="e.g. MyLibrary" Foreground="#6C757D" FontSize="12" Margin="0,0,0,15"/>
+                            
+                            <Label FontWeight="SemiBold">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="*" Foreground="Red"/>
+                                    <TextBlock Text="Package Version"/>
+                                </StackPanel>
+                            </Label>
+                            <TextBox Text="{Binding Version}" Margin="0,0,0,5" Padding="8"/>
+                            <TextBlock Text="e.g. 1.0.0" Foreground="#6C757D" FontSize="12" Margin="0,0,0,15"/>
+                            
+                            <Label Content="Stride Version" FontWeight="SemiBold"/>
+                            <TextBox Text="{Binding StrideVersion}" Margin="0,0,0,5" Padding="8"/>
+                            <TextBlock Text="e.g. 4.2.0" Foreground="#6C757D" FontSize="12" Margin="0,0,0,15"/>
+                            
+                            <Label Content="Author" FontWeight="SemiBold"/>
+                            <TextBox Text="{Binding Author}" Padding="8"/>
+                            <TextBlock Text="e.g. YourName" Foreground="#6C757D" FontSize="12"/>
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                            <Label FontWeight="SemiBold">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="*" Foreground="Red"/>
+                                    <TextBlock Text="Description"/>
+                                </StackPanel>
+                            </Label>
+                            <TextBox Text="{Binding Description}" 
+                                   TextWrapping="Wrap" Height="80" Margin="0,0,0,5" 
+                                   VerticalContentAlignment="Top" Padding="8"/>
+                            <TextBlock Text="e.g. Essential UI components and utilities for Stride projects" 
+                                     Foreground="#6C757D" FontSize="12" Margin="0,0,0,15"/>
+                            
+                            <Label Content="Tags (Optional)" FontWeight="SemiBold"/>
+                            <TextBox Text="{Binding Tags}" Margin="0,0,0,5" Padding="8"/>
+                            <TextBlock Text="e.g. ui-kit, utilities, components" 
+                                     Foreground="#6C757D" FontSize="12"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+            
+            <!-- Phase 1: Asset Selection -->
+            <Border Style="{DynamicResource PhaseSection}">
+                <StackPanel>
+                    <Border Background="{DynamicResource TitleGradient}" 
+                          CornerRadius="8,8,0,0" Padding="15,15,20,15"
+                          BorderBrush="#E9ECEF" BorderThickness="0,0,0,1">
+                        <TextBlock Foreground="{DynamicResource StrideDark}" 
+                                 FontWeight="SemiBold" FontSize="16">
+                            🖼️ Phase 1: Asset Selection
+                        </TextBlock>
+                    </Border>
+                    
+                    <StackPanel Margin="20">
+                        <TextBlock Text="Select which asset folders to include in your package" 
+                                 Foreground="#6C757D" Margin="0,0,0,15"/>
+                        
+                        <Label Content="Asset Folders" FontWeight="SemiBold"/>
+                        
+                        <!-- Select All Assets Checkbox -->
+                        <CheckBox IsChecked="{Binding SelectAllAssets}" Margin="0,0,0,10" FontWeight="SemiBold">
+                            <CheckBox.Content>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="📂 " />
+                                    <TextBlock Text="Select All Assets" />
+                                </StackPanel>
+                            </CheckBox.Content>
+                        </CheckBox>
+                        
+                        <Border Background="#F8F9FA" CornerRadius="8" 
+                              Padding="15" MaxHeight="400">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding AssetFolders}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding IsSelected}" Margin="0,4">
+                                                <CheckBox.Content>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="📁 " />
+                                                        <TextBlock Text="{Binding Name}" />
+                                                        <TextBlock Text="/" />
+                                                        <TextBlock Text=" (" Foreground="#6C757D" />
+                                                        <TextBlock Text="{Binding FileCount}" Foreground="#6C757D" />
+                                                        <TextBlock Text=" files)" Foreground="#6C757D" />
+                                                    </StackPanel>
+                                                </CheckBox.Content>
+                                            </CheckBox>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            
+            <!-- Phase 2: Code Selection -->
+            <Border Style="{DynamicResource PhaseSection}">
+                <StackPanel>
+                    <Border Background="{DynamicResource TitleGradient}" 
+                          CornerRadius="8,8,0,0" Padding="15,15,20,15"
+                          BorderBrush="#E9ECEF" BorderThickness="0,0,0,1">
+                        <TextBlock Foreground="{DynamicResource StrideDark}" 
+                                 FontWeight="SemiBold" FontSize="16">
+                            💻 Phase 2: Code Selection
+                        </TextBlock>
+                    </Border>
+                    
+                    <StackPanel Margin="20">
+                        <TextBlock Text="Select which code folders to include in your package" 
+                                 Foreground="#6C757D" Margin="0,0,0,15"/>
+                        
+                        <Label Content="Code Projects" FontWeight="SemiBold"/>
+                        <Border Background="#F8F9FA" CornerRadius="8" 
+                              Padding="15" MaxHeight="400">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding CodeProjects}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel>
+                                                <CheckBox IsChecked="{Binding IsSelected}" Margin="0,8" FontWeight="SemiBold">
+                                                    <CheckBox.Content>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="💾 " />
+                                                            <TextBlock Text="{Binding Name}" />
+                                                            <TextBlock Text="/ (" Foreground="#6C757D" />
+                                                            <TextBlock Text="{Binding Type}" Foreground="#6C757D" />
+                                                            <TextBlock Text=")" Foreground="#6C757D" />
+                                                        </StackPanel>
+                                                    </CheckBox.Content>
+                                                </CheckBox>
+                                                <ItemsControl ItemsSource="{Binding SubFolders}" Margin="20,0,0,0">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <CheckBox IsChecked="{Binding IsSelected}" Margin="0,2">
+                                                                <CheckBox.Content>
+                                                                    <StackPanel Orientation="Horizontal">
+                                                                        <TextBlock Text="📁 " />
+                                                                        <TextBlock Text="{Binding Name}" />
+                                                                        <TextBlock Text="/" />
+                                                                    </StackPanel>
+                                                                </CheckBox.Content>
+                                                            </CheckBox>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            
+            <!-- Phase 3: Resource Detection -->
+            <Border Style="{DynamicResource PhaseSection}">
+                <StackPanel>
+                    <Border Background="{DynamicResource TitleGradient}" 
+                          CornerRadius="8,8,0,0" Padding="15,15,20,15"
+                          BorderBrush="#E9ECEF" BorderThickness="0,0,0,1">
+                        <TextBlock Foreground="{DynamicResource StrideDark}" 
+                                 FontWeight="SemiBold" FontSize="16">
+                            🔍 Phase 3: Resource Detection (Automatic)
+                        </TextBlock>
+                    </Border>
+                    
+                    <StackPanel Margin="20">
+                        <TextBlock Text="Automatically detecting resource dependencies and organizing them" 
+                                 Foreground="#6C757D" Margin="0,0,0,15"/>
+                        
+                        <Border Style="{DynamicResource StatusPanel}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding StatusMessage}" Margin="0,0,0,10" />
+                                <ProgressBar Value="{Binding ProgressValue}" Height="6" 
+                                           Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisibilityConverter}}" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            
+            <!-- Phase 4: Namespace Cleanup -->
+            <Border Style="{DynamicResource PhaseSection}">
+                <StackPanel>
+                    <Border Background="{DynamicResource TitleGradient}" 
+                          CornerRadius="8,8,0,0" Padding="15,15,20,15"
+                          BorderBrush="#E9ECEF" BorderThickness="0,0,0,1">
+                        <TextBlock Foreground="{DynamicResource StrideDark}" 
+                                 FontWeight="SemiBold" FontSize="16">
+                            🧹 Phase 4: Namespace Cleanup
+                        </TextBlock>
+                    </Border>
+                    
+                    <StackPanel Margin="20">
+                        <TextBlock Text="Review and exclude unwanted namespaces from your package" 
+                                 Foreground="#6C757D" Margin="0,0,0,15"/>
+                        
+                        <Border Background="#F8F9FA" CornerRadius="8" 
+                              Padding="10" MaxHeight="400">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding Namespaces}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Margin="0,5" Padding="15" CornerRadius="8" BorderThickness="1">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsExcluded}" Value="True">
+                                                                <Setter Property="Background" Value="#FFF5F5" />
+                                                                <Setter Property="BorderBrush" Value="#FECACA" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsExcluded}" Value="False">
+                                                                <Setter Property="Background" Value="White" />
+                                                                <Setter Property="BorderBrush" Value="#E9ECEF" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <StackPanel>
+                                                    <CheckBox IsChecked="{Binding IsExcluded}" FontWeight="SemiBold"
+                                                            Content="{Binding Name}" />
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding Category}" FontSize="12">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Category}" Value="Remove">
+                                                                            <Setter Property="Foreground" Value="#DC3545" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Category}" Value="Keep">
+                                                                            <Setter Property="Foreground" Value="#155724" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                        <TextBlock Text=" - " FontSize="12" Foreground="#6C757D" />
+                                                        <TextBlock Text="{Binding FileCount}" FontSize="12" Foreground="#6C757D" />
+                                                        <TextBlock Text=" files" FontSize="12" Foreground="#6C757D" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            
+            <!-- Action Buttons -->
+            <Separator Margin="0,20"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button Content="📦 Create Package" 
+                      Command="{Binding CreatePackageCommand}"
+                      IsEnabled="{Binding CanCreatePackage}"
+                      Style="{DynamicResource StrideButton}" 
+                      Padding="20,12" FontSize="16"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

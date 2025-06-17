@@ -1,0 +1,160 @@
+﻿<UserControl x:Class="HS.Stride.Packer.UI.Views.ImportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:HS.Stride.Packer.UI.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                Background="White" Padding="30">
+        <StackPanel>
+            <!-- Tab Header -->
+            <StackPanel Margin="0,0,0,0" HorizontalAlignment="Center" >
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10" HorizontalAlignment="Center">
+                    <TextBlock Text="📥" FontSize="18" Margin="0,0,8,0" 
+                             Foreground="#28A745"/>
+                    <TextBlock Text="Import Package" FontSize="20" 
+                             FontWeight="SemiBold" Foreground="Black"/>
+                </StackPanel>
+                <TextBlock Text="Install a Stride package into your project" 
+                         Foreground="#6C757D" FontSize="14" HorizontalAlignment="Center"/>
+            </StackPanel>
+            <Separator Margin="0,20"/>
+            <!-- Package Source Selection -->
+            <StackPanel Margin="0,0,0,20">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
+                    <TextBlock Text="📥" FontSize="16" Margin="0,0,8,0" 
+                             Foreground="{DynamicResource StrideBlue}"/>
+                    <TextBlock Text="Select Package Source" FontSize="18" 
+                             FontWeight="SemiBold"/>
+                </StackPanel>
+                
+                <TabControl Background="Transparent" BorderThickness="0" SelectedIndex="{Binding SelectedSourceIndex}">
+                    <TabItem Header="📄 Local File">
+                        <StackPanel Margin="0,10">
+                            <Label Content="Package File" FontWeight="SemiBold"/>
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding PackageFilePath}" 
+                                       Padding="8"/>
+                                <Button Grid.Column="1" Content="📄 Browse" 
+                                      Command="{Binding BrowsePackageFileCommand}"
+                                      Padding="12,8" Margin="5,0,0,0"
+                                      Background="#F8F9FA" BorderBrush="#DEE2E6"
+                                      BorderThickness="1"/>
+                            </Grid>
+                            <TextBlock Text="Select a local .stridepackage file" 
+                                     Foreground="#6C757D" FontSize="12"/>
+                        </StackPanel>
+                    </TabItem>
+
+                </TabControl>
+                
+                <!-- Package Validation Status -->
+                <Border Margin="0,10,0,0" Padding="10" CornerRadius="5"
+                      Background="#F8F9FA" BorderBrush="#DEE2E6" BorderThickness="1"
+                      Visibility="{Binding PackageValidationMessage, Converter={StaticResource StringToVisibilityConverter}}">
+                    <TextBlock Text="{Binding PackageValidationMessage}" FontSize="12" TextWrapping="Wrap"
+                             Foreground="{Binding IsPackageValid, Converter={StaticResource BoolToColorConverter}}"/>
+                </Border>
+            </StackPanel>
+            
+            <!-- Target Project -->
+            <StackPanel Margin="0,0,0,30">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                    <TextBlock Text="🎯" FontSize="16" Margin="0,0,8,0" 
+                             Foreground="#28A745"/>
+                    <TextBlock Text="Target Project" FontSize="18" 
+                             FontWeight="SemiBold"/>
+                </StackPanel>
+                
+                <Label Content="Target Project Location" FontWeight="SemiBold"/>
+                <Grid Margin="0,0,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Text="{Binding TargetProjectPath}" Padding="8"/>
+                    <Button Grid.Column="1" Content="📁 Browse" 
+                          Command="{Binding BrowseTargetProjectCommand}"
+                          Padding="12,8" Margin="5,0,0,0"
+                          Background="#F8F9FA" BorderBrush="#DEE2E6"
+                          BorderThickness="1"/>
+                </Grid>
+                <TextBlock Text="{Binding TargetValidationMessage}" FontSize="12" Margin="0,5,0,0"
+                         Foreground="{Binding IsTargetValid, Converter={StaticResource BoolToColorConverter}}"
+                         Visibility="{Binding TargetValidationMessage, Converter={StaticResource StringToVisibilityConverter}}"/>
+                <TextBlock Text="Select target Stride project directory" 
+                         Foreground="#6C757D" FontSize="12"
+                         Visibility="{Binding TargetValidationMessage, Converter={StaticResource InverseStringToVisibilityConverter}}"/>
+            </StackPanel>
+            
+            <!-- GameStudio Warning -->
+            <Border Background="#FFF3CD" BorderBrush="#FFE69C" BorderThickness="1" 
+                  CornerRadius="4" Padding="8" Margin="0,0,0,15"
+                  Visibility="{Binding TargetValidationMessage, Converter={StaticResource InverseStringToVisibilityConverter}}">
+                <TextBlock Text="⚠️ Important: Close Stride GameStudio before importing packages" 
+                         Foreground="#856404" FontSize="12" FontWeight="Medium"/>
+            </Border>
+            
+            <!-- Status and Progress -->
+            <Border Margin="0,0,0,20" Padding="15" CornerRadius="8" 
+                  Background="#F8F9FA" BorderBrush="#DEE2E6" BorderThickness="1"
+                  Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel>
+                    <TextBlock Text="{Binding StatusMessage}" Margin="0,0,0,10" FontWeight="SemiBold"/>
+                    <ProgressBar Value="{Binding ProgressValue}" Height="6" 
+                               Background="#E9ECEF" Foreground="{DynamicResource StrideBlue}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Package Contents Preview -->
+            <Border Margin="0,0,0,20" Padding="15" CornerRadius="8" 
+                  Background="#F8F9FA" BorderBrush="#DEE2E6" BorderThickness="1"
+                  Visibility="{Binding PackageContents.Count, Converter={StaticResource IntToVisibilityConverter}}">
+                <StackPanel>
+                    <TextBlock Text="Package Contents Preview:" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                    <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding PackageContents}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" FontSize="12" Margin="0,1" FontFamily="Consolas"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </StackPanel>
+            </Border>
+
+            <!-- Import Results -->
+            <Border Margin="0,0,0,20" Padding="15" CornerRadius="8" 
+                  Background="#F8F9FA" BorderBrush="#DEE2E6" BorderThickness="1"
+                  Visibility="{Binding ImportResults.Count, Converter={StaticResource IntToVisibilityConverter}}">
+                <StackPanel>
+                    <TextBlock Text="Import Results:" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                    <ItemsControl ItemsSource="{Binding ImportResults}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" FontSize="12" Margin="0,2"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- Action Buttons -->
+            <Separator Margin="0,20"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button Content="📥 Import Package" 
+                      Command="{Binding ImportPackageCommand}"
+                      IsEnabled="{Binding CanImport}"
+                      Style="{DynamicResource StrideButton}" 
+                      Padding="20,12" FontSize="16"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

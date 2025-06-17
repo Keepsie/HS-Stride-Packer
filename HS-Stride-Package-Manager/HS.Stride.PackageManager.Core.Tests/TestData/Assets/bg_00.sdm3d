@@ -1,0 +1,15 @@
+!Model
+Id: 4bc36c7c-6e1d-4021-acb3-970720e6c110
+SerializedVersion: {Stride: 2.0.0.0}
+Tags: []
+Source: !file ../../Resources/model/BG/scene/bg_00.FBX
+Skeleton: null
+PivotPosition: {X: 0.0, Y: 0.0, Z: 0.0}
+Materials:
+    48b7a82aea9a6a418b1573380bb03b3b:
+        Name: BG00
+        MaterialInstance:
+            Material: a56ce7a8-7850-4168-ac5e-1239203ce032:BG00
+Modifiers: {}
+~SourceHashes:
+    d4e37adf342e48a42fb308294482b1f2~../../Resources/model/BG/scene/bg_00.FBX: d9cb8d7d0fc8f1ea2a519e602bbe2770

@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>hs_packer_icon.ico</ApplicationIcon>
+    <Version>0.8.0</Version>
+    <AssemblyVersion>0.8.0.0</AssemblyVersion>
+    <FileVersion>0.8.0.0</FileVersion>
+    <Copyright>© 2025 Happenstance Games LLC</Copyright>
+    <Company>Happenstance Games LLC</Company>
+    <Product>HS Stride Packer</Product>
+    <Description>WPF application for packaging and managing Stride Engine libraries</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="hs_packer.png" />
+    <None Remove="hs_packer_icon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HS.Stride.PackageManager.Core\HS.Stride.Packer.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="hs_packer.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="hs_packer_icon.ico" />
+    <Resource Include="hs_packer_icon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+</Project>

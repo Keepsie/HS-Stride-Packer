@@ -1,0 +1,10 @@
+!Video
+Id: 48eb758d-6786-4bba-aaef-c831a53e21a8
+SerializedVersion: {Stride: 2.1.0.0}
+Tags: []
+Source: !file ../../../../../Videos/2024-10-12 03-12-56.mp4
+VideoDuration:
+    StartTime: 0:00:00:00.0000000
+    EndTime: 0:00:00:21.2000000
+~SourceHashes:
+    70e9e74986b561b13ca93c3825e97b39~../../../../../Videos/2024-10-12 03-12-56.mp4: 6970257d07bf06d60ea52b19b746af7e
