@@ -1,0 +1,10 @@
+{
+  "name": "Stride Community Package Registry",
+  "description": "Community-driven package registry for Stride Engine", 
+  "updated": "06-17-2025",
+  "packages": [
+    "https://raw.githubusercontent.com/Keepsie/HS-Stride-Engine-Core/main/stridepackage.json",
+    "https://raw.githubusercontent.com/Keepsie/HS-Stride-Dev-Console/main/stridepackage.json",
+    "https://raw.githubusercontent.com/Keepsie/HS-Stride-Live-Dev-Editor/main/stridepackage.json"
+  ]
+}
