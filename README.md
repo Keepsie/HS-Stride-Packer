@@ -3,8 +3,6 @@
 A package importer and exporter for the Stride game engine that creates `.stridepackage` files similar to Unity's custom packaging system, making it easy to share libraries, assets, and complete projects.
 
 <img src="images/packer_1.PNG" alt="HS Dev Console Interface" style="max-width: 200px;">
-<img src="images/packer_2.PNG" alt="HS Dev Console Interface" style="max-width: 200px;">
-<img src="images/packer_3.PNG" alt="HS Dev Console Interface" style="max-width: 200px;">
 
 ## 🎯 Why This Tool Exists
 
