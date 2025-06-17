@@ -19,6 +19,21 @@
                 </StackPanel>
                 <TextBlock Text="Discover and download community packages" 
                          Foreground="#6C757D" FontSize="14" HorizontalAlignment="Center"/>
+                
+                <!-- Registry Content Warning -->
+                <Border Background="#FFF3CD" BorderBrush="#FFEAA7" BorderThickness="1" 
+                        CornerRadius="8" Padding="15" Margin="0,15,0,0">
+                    <StackPanel>
+                        <TextBlock Text="⚠️ Registry Content Warning" FontWeight="SemiBold" 
+                                 Foreground="#856404" FontSize="14" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Registry packages are hosted by other users and not controlled by HS Stride Packer." 
+                                 Foreground="#856404" FontSize="12" HorizontalAlignment="Center" 
+                                 TextWrapping="Wrap" Margin="0,5,0,0"/>
+                        <TextBlock Text="By continuing, you use these services at your own risk. See LICENSE.txt for full disclaimers." 
+                                 Foreground="#856404" FontSize="12" HorizontalAlignment="Center" 
+                                 TextWrapping="Wrap" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
             </StackPanel>
             <Separator Margin="0,20"/>
             <!-- Direct URL Installation -->

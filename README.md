@@ -254,6 +254,39 @@ YourProject/
 
 ### 🌐 Registry System
 
+
+### ⚠️ Important Legal Disclaimers
+
+**Third-Party Content Warning:**
+HS Stride Packer and Happenstance Games LLC are not responsible for any content, packages, or files downloaded through the registry system or external URLs. All packages are created and hosted by third parties.
+
+**Security Risks:**
+- Downloaded packages may contain malicious code, viruses, or other harmful content
+- Always scan downloaded files with antivirus software before importing
+- Review package source code when possible before use
+- Only download from trusted sources and verified authors
+
+**Licensing and Legal Compliance:**
+- Package authors are solely responsible for ensuring proper licensing
+- Users must verify licensing compatibility with their projects
+- HS Stride Packer does not validate or enforce license compliance
+- Copyright and intellectual property violations are the responsibility of package creators and users
+
+**No Warranty or Support:**
+- Third-party packages are provided "AS IS" without warranty of any kind
+- HS Stride Packer provides no support for third-party package functionality
+- Package compatibility, quality, and performance are not guaranteed
+- Package availability depends on third-party hosting services
+
+**Data Privacy:**
+- Registry operations may expose your IP address to third-party hosts
+- Package downloads create direct connections to external servers
+- We do not control third-party data collection or privacy practices
+
+**By using the registry system, you acknowledge these risks and agree that HS Stride Packer and its developers assume no liability for any damages, losses, or issues resulting from third-party content.**
+
+---
+
 **Community Package Discovery:**
 The packer supports registries for discovering and installing community packages. The system uses a two-file approach: package metadata (`.json`) for discovery and actual packages (`.stridepackage`) for installation.
 

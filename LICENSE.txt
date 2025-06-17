@@ -167,6 +167,37 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
 END OF TERMS AND CONDITIONS
 
+ADDITIONAL TERMS AND DISCLAIMERS
+
+THIRD-PARTY CONTENT DISCLAIMER
+
+This software may facilitate access to, download, or installation of 
+third-party content, packages, files, or materials ("Third-Party Content") 
+through registry systems, external URLs, or other mechanisms. Such 
+Third-Party Content is not part of this software, is not created or 
+controlled by the Licensor, and is not licensed under this License.
+
+All Third-Party Content is provided by third parties and accessed at your 
+own risk. Third-Party Content may contain malicious code, viruses, malware, 
+copyright violations, licensing conflicts, or other harmful or illegal 
+materials. You are solely responsible for:
+
+(a) Verifying the safety, legality, and licensing of any Third-Party Content;
+(b) Scanning Third-Party Content for security threats before use;
+(c) Ensuring compliance with all applicable licenses and laws;
+(d) Any damages or legal issues arising from Third-Party Content.
+
+THE LICENSOR AND ALL CONTRIBUTORS DISCLAIM ALL LIABILITY FOR ANY 
+THIRD-PARTY CONTENT, INCLUDING BUT NOT LIMITED TO ITS ACCURACY, 
+COMPLETENESS, SECURITY, LEGALITY, LICENSING, OR FITNESS FOR ANY PURPOSE. 
+THE LICENSOR PROVIDES NO WARRANTIES, EXPRESS OR IMPLIED, REGARDING 
+THIRD-PARTY CONTENT AND ASSUMES NO RESPONSIBILITY FOR THIRD-PARTY 
+CONTENT AVAILABILITY, QUALITY, OR SUPPORT.
+
+Registry systems and external content access features are provided as a 
+convenience only. Use of such features constitutes acknowledgment and 
+acceptance of these disclaimers and the associated risks.
+
 Copyright 2025 Happenstance Games LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
