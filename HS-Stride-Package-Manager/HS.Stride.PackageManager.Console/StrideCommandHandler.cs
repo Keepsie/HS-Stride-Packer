@@ -928,6 +928,10 @@ public class StrideCommandHandler
         {
             Helper.ShowInfo("=== Package Registry ===");
             Helper.AddSpace();
+            Helper.ShowWarning("⚠️ Registry Content Warning");
+            Helper.ShowWarning("Registry packages are hosted by other users and not controlled by HS Stride Packer.");
+            Helper.ShowWarning("By continuing, you use these services at your own risk. See LICENSE.txt for full disclaimers.");
+            Helper.AddSpace();
             Helper.Write("Connecting to registry... Please wait...");
             Helper.AddSpace();
 
@@ -971,6 +975,10 @@ public class StrideCommandHandler
         try
         {
             Helper.ShowInfo("=== Package Download ===");
+            Helper.AddSpace();
+            Helper.ShowWarning("⚠️ Registry Content Warning");
+            Helper.ShowWarning("Registry packages are hosted by other users and not controlled by HS Stride Packer.");
+            Helper.ShowWarning("By continuing, you use these services at your own risk. See LICENSE.txt for full disclaimers.");
             Helper.AddSpace();
 
             if (string.IsNullOrWhiteSpace(args))
@@ -1069,6 +1077,10 @@ public class StrideCommandHandler
         try
         {
             Helper.ShowInfo("=== Package Installation ===");
+            Helper.AddSpace();
+            Helper.ShowWarning("⚠️ Registry Content Warning");
+            Helper.ShowWarning("Registry packages are hosted by other users and not controlled by HS Stride Packer.");
+            Helper.ShowWarning("By continuing, you use these services at your own risk. See LICENSE.txt for full disclaimers.");
             Helper.AddSpace();
 
             if (string.IsNullOrWhiteSpace(args))
@@ -1337,6 +1349,10 @@ public class StrideCommandHandler
             }
 
             Helper.ShowInfo($"=== Searching for '{args}' ===");
+            Helper.AddSpace();
+            Helper.ShowWarning("⚠️ Registry Content Warning");
+            Helper.ShowWarning("Registry packages are hosted by other users and not controlled by HS Stride Packer.");
+            Helper.ShowWarning("By continuing, you use these services at your own risk. See LICENSE.txt for full disclaimers.");
             Helper.AddSpace();
             Helper.Write("Searching registry... Please wait...");
 

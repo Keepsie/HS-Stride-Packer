@@ -40,9 +40,6 @@ internal class Program
         Helper.AddSpace();
         
         Helper.ShowWarning("IMPORTANT: Close Stride GameStudio before importing/exporting packages");
-        Helper.ShowWarning("⚠️ Registry Content Warning");
-        Helper.ShowWarning("Registry packages are hosted by other users and not controlled by HS Stride Packer.");
-        Helper.ShowWarning("By continuing, you use these services at your own risk. See LICENSE.txt for full disclaimers.");
         Helper.AddSpace();
 
         try
