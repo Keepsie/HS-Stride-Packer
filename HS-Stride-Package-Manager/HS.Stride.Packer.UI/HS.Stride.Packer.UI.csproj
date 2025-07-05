@@ -28,11 +28,11 @@
 
   <ItemGroup>
     <Content Include="hs_packer.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="hs_packer_icon.ico" />
     <Resource Include="hs_packer_icon.ico">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
   </ItemGroup>
 </Project>
