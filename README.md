@@ -1,6 +1,6 @@
 # HS Stride Packer
 
-A package importer and exporter for the Stride game engine that creates `.stridepackage` files similar to Unity's custom packaging system, making it easy to share libraries, assets, and complete projects.
+Package creation and import tool for Stride Game Engine that creates .stridepackage files. Create, import, and share libraries, assets, and complete projects with automatic dependency handling, namespace cleanup, and registry support.
 
 <img src="images/packer_1.PNG" alt="HS Dev Console Interface" style="max-width: 200px;">
 
