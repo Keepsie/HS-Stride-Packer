@@ -641,6 +641,9 @@ namespace HS.Stride.Packer.Core
             var targetResourceDir = Path.Combine(tempDir, settings.TargetResourcePath);
             Directory.CreateDirectory(targetResourceDir);
 
+            // Get the package name to detect and prevent folder stacking
+            var packageName = settings.Manifest.Name;
+
             foreach (var resourceDep in settings.ResourceDependencies)
             {
                 if (File.Exists(resourceDep.ActualPath))
@@ -649,13 +652,22 @@ namespace HS.Stride.Packer.Core
                     var relativePath = Path.GetRelativePath(sourcePath, resourceDep.ActualPath);
 
                     // Strip project name and Resources folder to get clean content path
-                    // From: "desert_strides/Resources/Textures/file.png" 
+                    // From: "desert_strides/Resources/Textures/file.png"
                     // To: "Textures/file.png"
                     var pathParts = relativePath.Split('/', '\\');
                     if (pathParts.Length >= 3 && pathParts[1].Equals("Resources", StringComparison.OrdinalIgnoreCase))
                     {
                         // Skip first two parts (projectname/Resources/) and keep the rest
                         relativePath = string.Join(Path.DirectorySeparatorChar.ToString(), pathParts.Skip(2));
+
+                        // Prevent folder stacking: if the path already starts with the package name, strip it
+                        // This handles re-exporting after a previous import created Resources/PackageName/...
+                        // From: "PackageName/Textures/file.png" -> "Textures/file.png"
+                        var remainingParts = relativePath.Split('/', '\\');
+                        if (remainingParts.Length >= 1 && remainingParts[0].Equals(packageName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            relativePath = string.Join(Path.DirectorySeparatorChar.ToString(), remainingParts.Skip(1));
+                        }
                     }
 
                     // Combine with project folder to maintain structure
