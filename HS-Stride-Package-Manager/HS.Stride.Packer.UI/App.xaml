@@ -12,6 +12,8 @@
         <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
         <converters:InverseStringToVisibilityConverter x:Key="InverseStringToVisibilityConverter"/>
         <converters:IntToVisibilityConverter x:Key="IntToVisibilityConverter"/>
+        <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
+        <converters:InverseCountToVisibilityConverter x:Key="InverseCountToVisibilityConverter"/>
         <!-- Define Stride color scheme -->
         <SolidColorBrush x:Key="StrideBlue" Color="#4472C4"/>
         <SolidColorBrush x:Key="StrideDark" Color="#2C5AA0"/>
