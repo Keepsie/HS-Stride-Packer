@@ -42,21 +42,37 @@ namespace HS.Stride.Packer.Core
                         Errors = { $"Library path does not exist: {libraryPath}" }
                     };
                 }
-                
-                var validation = _resourceValidator.ValidateProject(libraryPath);
-                
-                var strideFiles = Directory.GetFiles(libraryPath, "*.sd*", SearchOption.AllDirectories);
-                if (!strideFiles.Any())
+
+                // Only validate the SELECTED asset folders, not the entire project
+                // This prevents errors from unrelated assets the user didn't select
+                var selectedFolders = _exportSettings?.SelectedAssetFolders ?? new List<string>();
+
+                ValidationResult validation;
+                if (selectedFolders.Any())
                 {
-                    validation.Warnings.Add("No Stride asset files found in the specified directory");
+                    // Validate only selected folders using the robust resource finder
+                    validation = _resourceValidator.ValidateAndCollectDependencies(libraryPath, selectedFolders);
                 }
-                
-                var namespaces = _namespaceScanner.ScanDirectory(libraryPath);
-                if (!namespaces.Any())
+                else
                 {
-                    validation.Warnings.Add("No custom namespaces detected - package may not contain any custom code");
+                    // No folders selected - just return empty validation with warning
+                    validation = new ValidationResult();
+                    validation.Warnings.Add("No asset folders selected");
                 }
-                
+
+                // Check if any Stride files exist in selected folders
+                var hasStrideFiles = selectedFolders.Any(folder =>
+                {
+                    var fullPath = Path.Combine(libraryPath, folder);
+                    return Directory.Exists(fullPath) &&
+                           Directory.GetFiles(fullPath, "*.sd*", SearchOption.AllDirectories).Any();
+                });
+
+                if (!hasStrideFiles && selectedFolders.Any())
+                {
+                    validation.Warnings.Add("No Stride asset files found in the selected folders");
+                }
+
                 return validation;
             });
         }

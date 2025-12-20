@@ -393,15 +393,19 @@ namespace HS.Stride.Packer.UI.ViewModels
 
         private void BrowseTargetProject()
         {
-            var dialog = new System.Windows.Forms.FolderBrowserDialog
+            var dialog = new Microsoft.Win32.OpenFileDialog
             {
-                Description = "Select Target Stride Project Directory",
-                ShowNewFolderButton = false
+                Title = "Select Stride Project Solution File",
+                Filter = "Visual Studio Solution Files (*.sln)|*.sln|All Files (*.*)|*.*",
+                CheckFileExists = true,
+                CheckPathExists = true,
+                Multiselect = false
             };
 
-            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            if (dialog.ShowDialog() == true)
             {
-                TargetProjectPath = dialog.SelectedPath;
+                // Use the directory containing the .sln file as the project path
+                TargetProjectPath = Path.GetDirectoryName(dialog.FileName) ?? "";
             }
         }
 

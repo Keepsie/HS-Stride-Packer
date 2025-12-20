@@ -41,6 +41,7 @@ namespace HS.Stride.Packer.UI.ViewModels
         // Progress and Status
         private bool _isProcessing;
         private string _statusMessage = "Ready to create package";
+        private string _errorMessage = "";
         private double _progressValue;
         private bool _canCreatePackage;
 
@@ -194,6 +195,50 @@ namespace HS.Stride.Packer.UI.ViewModels
             }
         }
 
+        // Exclude All Namespaces Property (tri-state toggle like Select All Assets)
+        private bool? _excludeAllNamespaces;
+        public bool? ExcludeAllNamespaces
+        {
+            get => _excludeAllNamespaces;
+            set
+            {
+                if (SetProperty(ref _excludeAllNamespaces, value))
+                {
+                    if (value.HasValue)
+                    {
+                        foreach (var ns in Namespaces)
+                        {
+                            ns.IsExcluded = value.Value;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Called by NamespaceItem when IsExcluded changes to update the tri-state checkbox
+        /// </summary>
+        public void UpdateExcludeAllNamespaces()
+        {
+            if (Namespaces.Count == 0)
+            {
+                _excludeAllNamespaces = false;
+                OnPropertyChanged(nameof(ExcludeAllNamespaces));
+                return;
+            }
+
+            var excludedCount = Namespaces.Count(ns => ns.IsExcluded);
+
+            if (excludedCount == 0)
+                _excludeAllNamespaces = false;      // None excluded
+            else if (excludedCount == Namespaces.Count)
+                _excludeAllNamespaces = true;       // All excluded
+            else
+                _excludeAllNamespaces = null;       // Partial (indeterminate)
+
+            OnPropertyChanged(nameof(ExcludeAllNamespaces));
+        }
+
         // Progress and Status
         public bool IsProcessing
         {
@@ -212,6 +257,20 @@ namespace HS.Stride.Packer.UI.ViewModels
             get => _statusMessage;
             set => SetProperty(ref _statusMessage, value);
         }
+
+        public string ErrorMessage
+        {
+            get => _errorMessage;
+            set
+            {
+                if (SetProperty(ref _errorMessage, value))
+                {
+                    OnPropertyChanged(nameof(HasError));
+                }
+            }
+        }
+
+        public bool HasError => !string.IsNullOrEmpty(_errorMessage);
 
         public double ProgressValue
         {
@@ -309,14 +368,16 @@ namespace HS.Stride.Packer.UI.ViewModels
         private async Task ScanAssetFoldersAsync()
         {
             var assetFolders = await Task.Run(() => _packageExporter.ScanForAssetFolders(ProjectPath));
-            
+
             AssetFolders.Clear();
             foreach (var folder in assetFolders)
             {
                 AssetFolders.Add(new AssetFolderItem
                 {
-                    Name = folder.RelativePath,
+                    Name = folder.Name,
+                    RelativePath = folder.RelativePath,  // Full path for export
                     FileCount = folder.FileCount,
+                    Depth = folder.Depth,  // For hierarchical display
                     IsSelected = true,
                     FullPath = folder.FullPath,
                     Parent = this
@@ -357,21 +418,25 @@ namespace HS.Stride.Packer.UI.ViewModels
         private async Task ScanNamespacesAsync()
         {
             var namespaceRefs = await Task.Run(() => _namespaceScanner.ScanDirectory(ProjectPath));
-            
+
             Namespaces.Clear();
             foreach (var ns in namespaceRefs)
             {
                 var shouldExclude = ns.Namespace.Contains("Test") || ns.Namespace.Contains("Debug") || ns.Namespace.Contains("Temp");
-                
+
                 Namespaces.Add(new NamespaceItem
                 {
                     Name = ns.Namespace,
                     FileCount = ns.FoundInFiles.Count,
                     IsExcluded = shouldExclude,
                     Files = ns.FoundInFiles,
-                    Category = shouldExclude ? "Remove" : "Keep"
+                    Category = shouldExclude ? "Remove" : "Keep",
+                    Parent = this
                 });
             }
+
+            // Update the tri-state checkbox after loading
+            UpdateExcludeAllNamespaces();
         }
 
         private void ValidateProjectPath()
@@ -459,6 +524,7 @@ namespace HS.Stride.Packer.UI.ViewModels
 
             IsProcessing = true;
             StatusMessage = "Creating package...";
+            ErrorMessage = "";  // Clear previous errors
             ProgressValue = 0;
 
             try
@@ -470,8 +536,9 @@ namespace HS.Stride.Packer.UI.ViewModels
 
                 ProgressValue = 100;
                 StatusMessage = "Package created successfully!";
-                
-                System.Windows.MessageBox.Show($"Package created successfully!\nFile: {result}", "Success", 
+                ErrorMessage = "";  // Clear errors on success
+
+                System.Windows.MessageBox.Show($"Package created successfully!\nFile: {result}", "Success",
                     MessageBoxButton.OK, MessageBoxImage.Information);
 
                 // Clear all areas for next package creation
@@ -479,9 +546,22 @@ namespace HS.Stride.Packer.UI.ViewModels
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Failed to create package: {ex.Message}";
-                System.Windows.MessageBox.Show($"Failed to create package: {ex.Message}", "Error", 
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                StatusMessage = "Failed to create package";
+
+                // Build detailed error message for the copyable text area
+                var errorBuilder = new System.Text.StringBuilder();
+                errorBuilder.AppendLine("=== PACKAGE CREATION FAILED ===");
+                errorBuilder.AppendLine();
+                errorBuilder.AppendLine(ex.Message);
+
+                if (ex.InnerException != null)
+                {
+                    errorBuilder.AppendLine();
+                    errorBuilder.AppendLine("--- Details ---");
+                    errorBuilder.AppendLine(ex.InnerException.Message);
+                }
+
+                ErrorMessage = errorBuilder.ToString();
             }
             finally
             {
@@ -514,10 +594,10 @@ namespace HS.Stride.Packer.UI.ViewModels
                 }
             };
 
-            // Collect selected asset folders
+            // Collect selected asset folders (use RelativePath for full subfolder structure)
             settings.SelectedAssetFolders = AssetFolders
                 .Where(af => af.IsSelected)
-                .Select(af => af.Name)
+                .Select(af => af.RelativePath)
                 .ToList();
 
             // Collect selected code folders
@@ -557,6 +637,7 @@ namespace HS.Stride.Packer.UI.ViewModels
 
             // Reset status
             StatusMessage = "Ready to create package";
+            ErrorMessage = "";
             ProgressValue = 0;
             CanCreatePackage = false;
         }
@@ -613,9 +694,16 @@ namespace HS.Stride.Packer.UI.ViewModels
         private bool _isSelected = true;
 
         public string Name { get; set; } = "";
+        public string RelativePath { get; set; } = "";  // Full relative path for export
         public int FileCount { get; set; }
         public string FullPath { get; set; } = "";
+        public int Depth { get; set; }  // Depth level for hierarchy display
         public ExportViewModel? Parent { get; set; }
+
+        /// <summary>
+        /// Display name with indentation for hierarchical view
+        /// </summary>
+        public string DisplayName => Depth > 0 ? $"{"   ".PadLeft(Depth * 3)}└─ {Name}" : Name;
 
         public bool IsSelected
         {
@@ -736,6 +824,7 @@ namespace HS.Stride.Packer.UI.ViewModels
         public int FileCount { get; set; }
         public List<string> Files { get; set; } = new();
         public string Category { get; set; } = "Keep";
+        public ExportViewModel? Parent { get; set; }
 
         public bool IsExcluded
         {
@@ -748,6 +837,7 @@ namespace HS.Stride.Packer.UI.ViewModels
                     Category = value ? "Remove" : "Keep";
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(Category));
+                    Parent?.UpdateExcludeAllNamespaces();
                 }
             }
         }

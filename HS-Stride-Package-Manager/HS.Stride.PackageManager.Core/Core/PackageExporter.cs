@@ -29,15 +29,12 @@ namespace HS.Stride.Packer.Core
                 throw new InvalidOperationException($"Invalid export settings: {string.Join(", ", validation.Errors)}");
             }
 
-            //Validate Resources and collect dependencies
-            var resourceValidation = _resourceValidator.ValidateProject(settings.LibraryPath);
-            if (resourceValidation.HasCriticalIssues)
-            {
-                    throw new InvalidOperationException($"Resource validation failed:\n{resourceValidation.GetReport()}");
-            }
-            
-            // Scan for resource dependencies and set target resource path
+            // Validate and collect resource dependencies (only for SELECTED folders, not entire project)
             var dependencyResult = _resourceValidator.ValidateAndCollectDependencies(settings.LibraryPath, settings.SelectedAssetFolders);
+            if (dependencyResult.HasCriticalIssues)
+            {
+                throw new InvalidOperationException($"Resource validation failed:\n{dependencyResult.GetReport()}");
+            }
             settings.ResourceDependencies = dependencyResult.ResourceDependencies;
             
             // Use package name (not project folder name) for resource organization
@@ -118,46 +115,64 @@ namespace HS.Stride.Packer.Core
         public List<AssetFolderInfo> ScanForAssetFolders(string projectPath)
         {
             var assetFolders = new List<AssetFolderInfo>();
-            
+
             // Check root level Assets/ (template structure)
             var rootAssetsPath = Path.Combine(projectPath, "Assets");
             if (Directory.Exists(rootAssetsPath))
             {
-                var rootFolders = Directory.GetDirectories(rootAssetsPath, "*", SearchOption.TopDirectoryOnly)
-                    .Select(path => new AssetFolderInfo
+                // Scan ALL directories recursively so users can select any subfolder
+                var allFolders = Directory.GetDirectories(rootAssetsPath, "*", SearchOption.AllDirectories)
+                    .Select(path =>
                     {
-                        Name = Path.GetFileName(path),
-                        FullPath = path,
-                        RelativePath = $"Assets/{Path.GetFileName(path)}",
-                        FileCount = Directory.GetFiles(path, "*", SearchOption.AllDirectories).Length,
-                        Location = "Root"
+                        var relativePath = Path.GetRelativePath(projectPath, path).Replace('\\', '/');
+                        // Calculate depth for indentation (0 = direct child of Assets)
+                        var depth = relativePath.Split('/').Length - 1; // -1 because "Assets" is the base
+                        return new AssetFolderInfo
+                        {
+                            Name = Path.GetFileName(path),
+                            FullPath = path,
+                            RelativePath = relativePath,
+                            // Only count files directly in this folder, not subfolders
+                            FileCount = Directory.GetFiles(path, "*", SearchOption.TopDirectoryOnly).Length,
+                            Location = "Root",
+                            Depth = depth
+                        };
                     })
-                    .Where(folder => folder.FileCount > 0)
+                    .OrderBy(folder => folder.RelativePath) // Sort alphabetically for hierarchy
                     .ToList();
-                
-                assetFolders.AddRange(rootFolders);
+
+                assetFolders.AddRange(allFolders);
             }
-            
+
             // Check for ProjectName/Assets/ (fresh structure)
             var projectName = Path.GetFileName(projectPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
             var nestedAssetsPath = Path.Combine(projectPath, projectName, "Assets");
             if (Directory.Exists(nestedAssetsPath))
             {
-                var nestedFolders = Directory.GetDirectories(nestedAssetsPath, "*", SearchOption.TopDirectoryOnly)
-                    .Select(path => new AssetFolderInfo
+                // Scan ALL directories recursively so users can select any subfolder
+                var allFolders = Directory.GetDirectories(nestedAssetsPath, "*", SearchOption.AllDirectories)
+                    .Select(path =>
                     {
-                        Name = Path.GetFileName(path),
-                        FullPath = path,
-                        RelativePath = $"{projectName}/Assets/{Path.GetFileName(path)}",
-                        FileCount = Directory.GetFiles(path, "*", SearchOption.AllDirectories).Length,
-                        Location = "Nested"
+                        var relativePath = Path.GetRelativePath(projectPath, path).Replace('\\', '/');
+                        // Calculate depth for indentation (0 = direct child of ProjectName/Assets)
+                        var depth = relativePath.Split('/').Length - 2; // -2 because "ProjectName/Assets" is the base
+                        return new AssetFolderInfo
+                        {
+                            Name = Path.GetFileName(path),
+                            FullPath = path,
+                            RelativePath = relativePath,
+                            // Only count files directly in this folder, not subfolders
+                            FileCount = Directory.GetFiles(path, "*", SearchOption.TopDirectoryOnly).Length,
+                            Location = "Nested",
+                            Depth = depth
+                        };
                     })
-                    .Where(folder => folder.FileCount > 0)
+                    .OrderBy(folder => folder.RelativePath) // Sort alphabetically for hierarchy
                     .ToList();
-                
-                assetFolders.AddRange(nestedFolders);
+
+                assetFolders.AddRange(allFolders);
             }
-            
+
             return assetFolders;
         }
 
@@ -337,6 +352,9 @@ namespace HS.Stride.Packer.Core
                     switch (item.Reference.Type)
                     {
                         case ResourceReferenceType.SourceReference:
+                            // Try both formats: with and without !file prefix
+                            // (we strip !file during parsing but original content may have it)
+                            modifiedContent = modifiedContent.Replace($"Source: !file {item.Reference.ResourcePath}", $"Source: !file {newRelativePath}");
                             modifiedContent = modifiedContent.Replace($"Source: {item.Reference.ResourcePath}", $"Source: {newRelativePath}");
                             break;
                         case ResourceReferenceType.FileReference:
@@ -357,36 +375,37 @@ namespace HS.Stride.Packer.Core
         private string MapAssetFileToTempStructure(string originalAssetFile, string libraryPath, string tempDir, List<string>? selectedAssetFolders)
         {
             var relativePath = Path.GetRelativePath(libraryPath, originalAssetFile);
-            
+
             // Detect the separator style from the temp directory to match the expected format
             char separatorToUse = tempDir.Contains('/') ? '/' : Path.DirectorySeparatorChar;
-            
+
             // Normalize paths for cross-platform comparison (Windows uses \, Unix uses /)
             var normalizedRelativePath = relativePath.Replace('\\', '/');
-            
+
             // Check if this file is in any selected asset folders that get reorganized
             foreach (var assetFolder in selectedAssetFolders ?? new List<string>())
             {
                 var normalizedAssetFolder = assetFolder.Replace('\\', '/');
-                
+
                 if (normalizedRelativePath.StartsWith(normalizedAssetFolder, StringComparison.OrdinalIgnoreCase))
                 {
-                    // Asset folders get flattened: ProjectName/Assets/UI → Assets/UI
-                    var folderName = Path.GetFileName(assetFolder);
+                    // Preserve subfolder structure: ProjectName/Assets/Happenstance/DevTextures → Assets/Happenstance/DevTextures
+                    var assetRelativePath = GetAssetRelativePath(assetFolder);
                     var remainingPath = normalizedRelativePath.Substring(normalizedAssetFolder.Length).TrimStart('/');
-                    
-                    // Convert remaining path to use the detected separator style
+
+                    // Convert paths to use the detected separator style
                     if (separatorToUse == '\\')
                     {
+                        assetRelativePath = assetRelativePath.Replace('/', '\\');
                         remainingPath = remainingPath.Replace('/', '\\');
                     }
-                    
-                    // Build path with the detected separator style
-                    var parts = new[] { tempDir.TrimEnd('/', '\\'), "Assets", folderName, remainingPath };
+
+                    // Build path preserving the full subfolder structure
+                    var parts = new[] { tempDir.TrimEnd('/', '\\'), assetRelativePath, remainingPath };
                     return string.Join(separatorToUse.ToString(), parts.Where(p => !string.IsNullOrEmpty(p)));
                 }
             }
-            
+
             // For non-asset files, use original structure with detected separator
             var adjustedRelativePath = relativePath.Replace('\\', '/');
             if (separatorToUse == '\\')
@@ -581,15 +600,20 @@ namespace HS.Stride.Packer.Core
 
         private async Task CopySelectedFoldersAsync(string sourcePath, string tempDir, ExportSettings settings)
         {
-            // Phase 1: Copy selected asset folders to root Assets/ level
-            foreach (var assetFolder in settings.SelectedAssetFolders ?? new List<string>())
+            // Phase 1: Copy selected asset folders, preserving subfolder structure
+            // Filter out child folders if their parent is also selected (parent includes children)
+            var foldersToProcess = FilterRedundantChildFolders(settings.SelectedAssetFolders ?? new List<string>());
+
+            foreach (var assetFolder in foldersToProcess)
             {
                 var sourceAssetPath = Path.Combine(sourcePath, assetFolder);
-                
-                // Extract just the final folder name and put under root Assets/
-                var assetFolderName = Path.GetFileName(assetFolder);
-                var targetAssetPath = Path.Combine(tempDir, "Assets", assetFolderName);
-                
+
+                // Preserve full subfolder structure relative to Assets/
+                // e.g., "Assets/Happenstance/DevTextures" -> "Assets/Happenstance/DevTextures"
+                // e.g., "ProjectName/Assets/Happenstance/DevTextures" -> "Assets/Happenstance/DevTextures"
+                var targetRelativePath = GetAssetRelativePath(assetFolder);
+                var targetAssetPath = Path.Combine(tempDir, targetRelativePath);
+
                 if (Directory.Exists(sourceAssetPath))
                 {
                     FileHelper.CopyDirectory(sourceAssetPath, targetAssetPath);
@@ -687,6 +711,64 @@ namespace HS.Stride.Packer.Core
             await UpdateAssetReferencesDirectMappingAsync(tempDir, settings);
         }
 
+        /// <summary>
+        /// Filters out child folders when their parent is also selected.
+        /// e.g., if both "Assets/Happenstance" and "Assets/Happenstance/DevTextures" are selected,
+        /// only "Assets/Happenstance" is kept (it already includes DevTextures).
+        /// </summary>
+        private List<string> FilterRedundantChildFolders(List<string> selectedFolders)
+        {
+            if (selectedFolders.Count <= 1)
+                return selectedFolders;
+
+            var normalized = selectedFolders
+                .Select(f => f.Replace('\\', '/').TrimEnd('/'))
+                .OrderBy(f => f.Length) // Shorter (parent) paths first
+                .ToList();
+
+            var result = new List<string>();
+
+            foreach (var folder in normalized)
+            {
+                // Check if any already-added folder is a parent of this one
+                var isChildOfExisting = result.Any(parent =>
+                    folder.StartsWith(parent + "/", StringComparison.OrdinalIgnoreCase));
+
+                if (!isChildOfExisting)
+                {
+                    result.Add(folder);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Gets the asset-relative path for packaging, preserving subfolder structure.
+        /// Converts "ProjectName/Assets/Happenstance/DevTextures" -> "Assets/Happenstance/DevTextures"
+        /// Converts "Assets/Happenstance/DevTextures" -> "Assets/Happenstance/DevTextures"
+        /// </summary>
+        private string GetAssetRelativePath(string folderPath)
+        {
+            var normalized = folderPath.Replace('\\', '/');
+
+            // Find the "Assets/" part and keep everything from there
+            var assetsIndex = normalized.IndexOf("Assets/", StringComparison.OrdinalIgnoreCase);
+            if (assetsIndex >= 0)
+            {
+                return normalized.Substring(assetsIndex);
+            }
+
+            // If "Assets/" not found, check if it starts with "Assets"
+            if (normalized.StartsWith("Assets", StringComparison.OrdinalIgnoreCase))
+            {
+                return normalized;
+            }
+
+            // Fallback: just use Assets/ + folder name
+            return "Assets/" + Path.GetFileName(folderPath);
+        }
+
     }
 
     public class AssetFolderInfo
@@ -696,6 +778,12 @@ namespace HS.Stride.Packer.Core
         public string RelativePath { get; set; } = string.Empty;
         public int FileCount { get; set; }
         public string Location { get; set; } = string.Empty; // "Root" or "Nested"
+        public int Depth { get; set; } // Depth level for UI indentation (0 = top-level subfolder)
+
+        /// <summary>
+        /// Display name with indentation based on depth for hierarchical view
+        /// </summary>
+        public string DisplayName => new string(' ', Depth * 2) + (Depth > 0 ? "└─ " : "") + Name;
     }
 
     public class CodeFolderInfo
