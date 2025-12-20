@@ -25,16 +25,19 @@
                     <Grid>
                         <!-- Tab Buttons on Left -->
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                            <Button Name="ExportTabBtn" Content="📤 Export" 
+                            <Button Name="ExportTabBtn" Content="📤 Export"
                                   Background="{StaticResource StrideBlue}" Foreground="White"
-                                  BorderThickness="0" Padding="25,15" FontWeight="SemiBold"
+                                  BorderThickness="0" Padding="20,15" FontWeight="SemiBold"
                                   Margin="0,0,1,0"/>
-                            <Button Name="ImportTabBtn" Content="📥 Import" 
+                            <Button Name="ImportTabBtn" Content="📥 Import"
                                   Background="Transparent" Foreground="#6C757D"
-                                  BorderThickness="0" Padding="25,15" FontWeight="Medium"/>
-                            <Button Name="StoreTabBtn" Content="🏪 Store" 
+                                  BorderThickness="0" Padding="20,15" FontWeight="Medium"/>
+                            <Button Name="CleanupTabBtn" Content="🧹 Cleanup"
                                   Background="Transparent" Foreground="#6C757D"
-                                  BorderThickness="0" Padding="25,15" FontWeight="Medium"/>
+                                  BorderThickness="0" Padding="20,15" FontWeight="Medium"/>
+                            <Button Name="StoreTabBtn" Content="🏪 Store"
+                                  Background="Transparent" Foreground="#6C757D"
+                                  BorderThickness="0" Padding="20,15" FontWeight="Medium"/>
                         </StackPanel>
                         
                         <!-- Logo and Name on Right -->
@@ -73,7 +76,12 @@
                     <TabItem Header="Import">
                         <views:ImportView/>
                     </TabItem>
-                    
+
+                    <!-- Cleanup Tab -->
+                    <TabItem Header="Cleanup">
+                        <views:CleanupView/>
+                    </TabItem>
+
                     <!-- Store Tab -->
                     <TabItem Header="Store">
                         <views:StoreView/>

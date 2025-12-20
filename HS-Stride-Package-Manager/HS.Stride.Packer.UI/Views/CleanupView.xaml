@@ -1,0 +1,310 @@
+<UserControl x:Class="HS.Stride.Packer.UI.Views.CleanupView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:HS.Stride.Packer.UI.Views"
+             mc:Ignorable="d"
+             d:DesignHeight="800" d:DesignWidth="700">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                Background="White" Padding="30">
+        <StackPanel>
+            <!-- Tab Header -->
+            <StackPanel Margin="0,0,0,0" HorizontalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10" HorizontalAlignment="Center">
+                    <TextBlock Text="&#x1F9F9;" FontSize="18" Margin="0,0,8,0"
+                             Foreground="#DC3545"/>
+                    <TextBlock Text="Project Cleanup" FontSize="20"
+                             FontWeight="SemiBold" Foreground="Black"/>
+                </StackPanel>
+                <TextBlock Text="Find orphaned resources, reorganize files, and clean empty folders"
+                         Foreground="#6C757D" FontSize="14" HorizontalAlignment="Center"/>
+            </StackPanel>
+            <Separator Margin="0,20"/>
+
+            <!-- Project Selection -->
+            <StackPanel Margin="0,0,0,20">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                    <TextBlock Text="&#x1F4C1;" FontSize="16" Margin="0,0,8,0"
+                             Foreground="{DynamicResource StrideBlue}"/>
+                    <TextBlock Text="Select Project" FontSize="18"
+                             FontWeight="SemiBold"/>
+                </StackPanel>
+
+                <Grid Margin="0,5,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Text="{Binding ProjectPath}" Padding="8" IsReadOnly="True"/>
+                    <Button Grid.Column="1" Content="&#x1F4C1; Browse"
+                          Command="{Binding BrowseProjectCommand}"
+                          Padding="12,8" Margin="5,0,0,0"
+                          Background="#F8F9FA" BorderBrush="#DEE2E6"
+                          BorderThickness="1"/>
+                    <Button Grid.Column="2" Content="&#x1F50D; Scan"
+                          Command="{Binding ScanProjectCommand}"
+                          Padding="12,8" Margin="5,0,0,0"
+                          Background="{DynamicResource StrideBlue}" Foreground="White"
+                          BorderThickness="0" FontWeight="SemiBold"/>
+                </Grid>
+            </StackPanel>
+
+            <!-- Progress Bar -->
+            <ProgressBar Value="{Binding ProgressValue}" Height="4" Margin="0,0,0,10"
+                       Visibility="{Binding IsScanning, Converter={StaticResource BoolToVisibilityConverter}}"
+                       Foreground="{DynamicResource StrideBlue}"/>
+
+            <!-- Status Message -->
+            <Border Background="#F8F9FA" BorderBrush="#DEE2E6" BorderThickness="1"
+                  CornerRadius="4" Padding="10" Margin="0,0,0,20">
+                <TextBlock Text="{Binding StatusMessage}" FontSize="12" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Summary Stats (visible after scan) -->
+            <Border Background="#E7F3FF" BorderBrush="#B6D4FE" BorderThickness="1"
+                  CornerRadius="4" Padding="15" Margin="0,0,0,20"
+                  Visibility="{Binding HasScanned, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                        <TextBlock Text="{Binding TotalAssets}" FontSize="24" FontWeight="Bold"
+                                 HorizontalAlignment="Center" Foreground="{DynamicResource StrideBlue}"/>
+                        <TextBlock Text="Assets" FontSize="12" HorizontalAlignment="Center" Foreground="#6C757D"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                        <TextBlock Text="{Binding TotalResources}" FontSize="24" FontWeight="Bold"
+                                 HorizontalAlignment="Center" Foreground="{DynamicResource StrideBlue}"/>
+                        <TextBlock Text="Resources" FontSize="12" HorizontalAlignment="Center" Foreground="#6C757D"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                        <TextBlock Text="{Binding OrphanedCount}" FontSize="24" FontWeight="Bold"
+                                 HorizontalAlignment="Center" Foreground="#DC3545"/>
+                        <TextBlock Text="Orphaned" FontSize="12" HorizontalAlignment="Center" Foreground="#6C757D"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                        <TextBlock Text="{Binding EmptyFolderCount}" FontSize="24" FontWeight="Bold"
+                                 HorizontalAlignment="Center" Foreground="#FFC107"/>
+                        <TextBlock Text="Empty Folders" FontSize="12" HorizontalAlignment="Center" Foreground="#6C757D"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Orphaned Resources Section -->
+            <StackPanel Margin="0,0,0,20"
+                      Visibility="{Binding HasScanned, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBlock Text="&#x1F5D1;" FontSize="16" Margin="0,0,8,0" Foreground="#DC3545"/>
+                    <TextBlock Text="Orphaned Resources" FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding OrphanedSize, StringFormat=' ({0})'}"
+                             FontSize="14" Foreground="#6C757D" VerticalAlignment="Bottom" Margin="5,0,0,2"/>
+                </StackPanel>
+
+                <TextBlock Text="Resources in the Resources folder that are not referenced by any asset"
+                         Foreground="#6C757D" FontSize="12" Margin="0,0,0,10"/>
+
+                <!-- Select All Checkbox -->
+                <CheckBox Content="Select All" IsThreeState="True"
+                        IsChecked="{Binding SelectAllOrphans, Mode=TwoWay}"
+                        Margin="0,0,0,5" FontWeight="SemiBold"
+                        Visibility="{Binding OrphanedResources.Count, Converter={StaticResource CountToVisibilityConverter}}"/>
+
+                <Border Background="#FFF" BorderBrush="#DEE2E6" BorderThickness="1"
+                      CornerRadius="4" MaxHeight="200">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding OrphanedResources}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#EEE" BorderThickness="0,0,0,1" Padding="8,6">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                                <TextBlock Text="{Binding FileName}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="{Binding RelativePath}" FontSize="11" Foreground="#6C757D"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" Text="{Binding SizeDisplay}"
+                                                     Foreground="#6C757D" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+
+                <TextBlock Text="No orphaned resources found" Foreground="#28A745" FontStyle="Italic"
+                         Margin="0,5,0,0"
+                         Visibility="{Binding OrphanedResources.Count, Converter={StaticResource InverseCountToVisibilityConverter}}"/>
+
+                <Button Content="&#x1F5D1; Delete Selected Orphans"
+                      Command="{Binding DeleteOrphansCommand}"
+                      Padding="12,8" Margin="0,10,0,0"
+                      Background="#DC3545" Foreground="White"
+                      BorderThickness="0" FontWeight="SemiBold"
+                      HorizontalAlignment="Left"
+                      Visibility="{Binding OrphanedResources.Count, Converter={StaticResource CountToVisibilityConverter}}"/>
+            </StackPanel>
+
+            <!-- Orphaned Folders Section -->
+            <StackPanel Margin="0,0,0,20"
+                      Visibility="{Binding HasScanned, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBlock Text="&#x1F4C1;" FontSize="16" Margin="0,0,8,0" Foreground="#DC3545"/>
+                    <TextBlock Text="Fully Orphaned Folders" FontSize="18" FontWeight="SemiBold"/>
+                </StackPanel>
+
+                <TextBlock Text="Folders where ALL files are orphaned - can be safely deleted entirely"
+                         Foreground="#6C757D" FontSize="12" Margin="0,0,0,10"/>
+
+                <Border Background="#FFF" BorderBrush="#DEE2E6" BorderThickness="1"
+                      CornerRadius="4" MaxHeight="150"
+                      Visibility="{Binding OrphanedFolders.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding OrphanedFolders}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#EEE" BorderThickness="0,0,0,1" Padding="8,6">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding RelativePath}"
+                                                     VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding OrphanCount, StringFormat='{}{0} files'}"
+                                                     Foreground="#6C757D" VerticalAlignment="Center" Margin="10,0"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding SizeDisplay}"
+                                                     Foreground="#6C757D" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+
+                <TextBlock Text="No fully orphaned folders found" Foreground="#28A745" FontStyle="Italic"
+                         Margin="0,5,0,0"
+                         Visibility="{Binding OrphanedFolders.Count, Converter={StaticResource InverseCountToVisibilityConverter}}"/>
+
+                <Button Content="&#x1F5D1; Delete Selected Folders"
+                      Command="{Binding DeleteFoldersCommand}"
+                      Padding="12,8" Margin="0,10,0,0"
+                      Background="#DC3545" Foreground="White"
+                      BorderThickness="0" FontWeight="SemiBold"
+                      HorizontalAlignment="Left"
+                      Visibility="{Binding OrphanedFolders.Count, Converter={StaticResource CountToVisibilityConverter}}"/>
+            </StackPanel>
+
+            <!-- Misplaced Resources Section -->
+            <StackPanel Margin="0,0,0,20"
+                      Visibility="{Binding HasScanned, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBlock Text="&#x1F4E6;" FontSize="16" Margin="0,0,8,0" Foreground="#FFC107"/>
+                    <TextBlock Text="Misplaced Resources" FontSize="18" FontWeight="SemiBold"/>
+                </StackPanel>
+
+                <TextBlock Text="Resources that could be better organized to match their asset folder structure"
+                         Foreground="#6C757D" FontSize="12" Margin="0,0,0,5"/>
+                <TextBlock Text="⚠️ Warning: Complex assets may have references that aren't updated correctly."
+                         Foreground="#856404" FontSize="11" Margin="0,0,0,10"/>
+
+                <!-- Select All Checkbox -->
+                <CheckBox Content="Select All" IsThreeState="True"
+                        IsChecked="{Binding SelectAllMisplaced, Mode=TwoWay}"
+                        Margin="0,0,0,5" FontWeight="SemiBold"
+                        Visibility="{Binding MisplacedResources.Count, Converter={StaticResource CountToVisibilityConverter}}"/>
+
+                <Border Background="#FFF" BorderBrush="#DEE2E6" BorderThickness="1"
+                      CornerRadius="4" MaxHeight="200"
+                      Visibility="{Binding MisplacedResources.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding MisplacedResources}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#EEE" BorderThickness="0,0,0,1" Padding="8,6">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Top" Margin="0,3,0,0"/>
+                                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                                <TextBlock Text="{Binding FileName}" FontWeight="SemiBold"/>
+                                                <TextBlock FontSize="11" Foreground="#6C757D">
+                                                    <Run Text="{Binding CurrentPath, Mode=OneWay}"/>
+                                                    <Run Text=" -> " Foreground="#28A745"/>
+                                                    <Run Text="{Binding SuggestedPath, Mode=OneWay}" Foreground="#28A745"/>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+
+                <TextBlock Text="No misplaced resources found" Foreground="#28A745" FontStyle="Italic"
+                         Margin="0,5,0,0"
+                         Visibility="{Binding MisplacedResources.Count, Converter={StaticResource InverseCountToVisibilityConverter}}"/>
+
+                <Button Content="&#x1F4E6; Reorganize Selected"
+                      Command="{Binding ReorganizeCommand}"
+                      Padding="12,8" Margin="0,10,0,0"
+                      Background="#FFC107" Foreground="Black"
+                      BorderThickness="0" FontWeight="SemiBold"
+                      HorizontalAlignment="Left"
+                      Visibility="{Binding MisplacedResources.Count, Converter={StaticResource CountToVisibilityConverter}}"/>
+            </StackPanel>
+
+            <!-- Empty Folders Section -->
+            <StackPanel Margin="0,0,0,20"
+                      Visibility="{Binding HasScanned, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBlock Text="&#x1F4C2;" FontSize="16" Margin="0,0,8,0" Foreground="#6C757D"/>
+                    <TextBlock Text="Empty Folders" FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding EmptyFolderCount, StringFormat=' ({0})'}"
+                             FontSize="14" Foreground="#6C757D" VerticalAlignment="Bottom" Margin="5,0,0,2"/>
+                </StackPanel>
+
+                <TextBlock Text="Folders with no files that can be safely removed"
+                         Foreground="#6C757D" FontSize="12" Margin="0,0,0,10"/>
+
+                <Button Content="&#x1F9F9; Clean All Empty Folders"
+                      Command="{Binding CleanEmptyFoldersCommand}"
+                      Padding="12,8" Margin="0,0,0,0"
+                      Background="#6C757D" Foreground="White"
+                      BorderThickness="0" FontWeight="SemiBold"
+                      HorizontalAlignment="Left"/>
+            </StackPanel>
+
+            <!-- GameStudio Warning -->
+            <Border Background="#FFF3CD" BorderBrush="#FFE69C" BorderThickness="1"
+                  CornerRadius="4" Padding="8" Margin="0,10,0,0"
+                  Visibility="{Binding HasScanned, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="Warning: Close Stride GameStudio before making changes to avoid conflicts"
+                         FontSize="12" Foreground="#856404" TextWrapping="Wrap"/>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

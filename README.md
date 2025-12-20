@@ -115,6 +115,40 @@ Resources/
 
 This organization makes it easy to remove packages later - just delete the entire `LibraryName` folder and all resources from that library are gone. No hunting through scattered files.
 
+### 🧹 Project Cleanup
+
+Stride doesn't clean up after itself when you move or delete assets. Over time, projects accumulate orphaned resources, empty folders, and disorganized files. The Cleanup tab fixes this.
+
+**When to Use:**
+- After reorganizing your asset folder structure in GameStudio
+- After deleting assets that referenced resources
+- Before exporting a package to ensure clean structure
+- Periodically to keep your project organized
+
+**Features:**
+- **Orphaned Resources:** Finds files in the Resources folder that aren't referenced by any asset
+- **Orphaned Folders:** Identifies folders where all files are orphaned (safe to delete entirely)
+- **Misplaced Resources:** Suggests better organization based on asset folder structure
+- **Empty Folders:** Removes all empty folders in one click
+
+**How to Use:**
+1. Select your Stride project (.sln file)
+2. Click **Scan** to analyze the project
+3. Review the results - orphaned resources, misplaced files, empty folders
+4. Select items to clean up and use the action buttons
+
+**Reorganize Resources:**
+The reorganize feature moves resources to match their asset's folder structure:
+```
+Before:
+Resources/random_texture.png  (used by Assets/Characters/Hero.sdtex)
+
+After:
+Resources/Characters/random_texture.png
+```
+
+> ⚠️ **Warning:** Complex assets may have references that aren't updated correctly during reorganization. Test after reorganizing.
+
 ### 🧹 Namespace Cleanup (Critical)
 
 **Why This Matters:**

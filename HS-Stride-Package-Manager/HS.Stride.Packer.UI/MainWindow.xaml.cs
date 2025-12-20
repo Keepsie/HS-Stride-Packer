@@ -28,7 +28,8 @@ namespace HS.Stride.Packer.UI
             // Wire up the navigation buttons
             ExportTabBtn.Click += (s, e) => SwitchTab(0);
             ImportTabBtn.Click += (s, e) => SwitchTab(1);
-            StoreTabBtn.Click += (s, e) => SwitchTab(2);
+            CleanupTabBtn.Click += (s, e) => SwitchTab(2);
+            StoreTabBtn.Click += (s, e) => SwitchTab(3);
         }
         
         private void SwitchTab(int tabIndex)
@@ -51,6 +52,11 @@ namespace HS.Stride.Packer.UI
                     ImportTabBtn.FontWeight = FontWeights.SemiBold;
                     break;
                 case 2:
+                    CleanupTabBtn.Background = (System.Windows.Media.Brush)FindResource("StrideBlue");
+                    CleanupTabBtn.Foreground = System.Windows.Media.Brushes.White;
+                    CleanupTabBtn.FontWeight = FontWeights.SemiBold;
+                    break;
+                case 3:
                     StoreTabBtn.Background = (System.Windows.Media.Brush)FindResource("StrideBlue");
                     StoreTabBtn.Foreground = System.Windows.Media.Brushes.White;
                     StoreTabBtn.FontWeight = FontWeights.SemiBold;
@@ -62,15 +68,19 @@ namespace HS.Stride.Packer.UI
         {
             var defaultBrush = System.Windows.Media.Brushes.Transparent;
             var defaultForeground = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#6C757D");
-            
+
             ExportTabBtn.Background = defaultBrush;
             ExportTabBtn.Foreground = defaultForeground;
             ExportTabBtn.FontWeight = FontWeights.Medium;
-            
+
             ImportTabBtn.Background = defaultBrush;
             ImportTabBtn.Foreground = defaultForeground;
             ImportTabBtn.FontWeight = FontWeights.Medium;
-            
+
+            CleanupTabBtn.Background = defaultBrush;
+            CleanupTabBtn.Foreground = defaultForeground;
+            CleanupTabBtn.FontWeight = FontWeights.Medium;
+
             StoreTabBtn.Background = defaultBrush;
             StoreTabBtn.Foreground = defaultForeground;
             StoreTabBtn.FontWeight = FontWeights.Medium;
