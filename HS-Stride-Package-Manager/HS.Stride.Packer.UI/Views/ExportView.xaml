@@ -181,7 +181,7 @@
                             </CheckBox.Content>
                         </CheckBox>
                         
-                        <Border Background="#F8F9FA" CornerRadius="8" 
+                        <Border Background="#F8F9FA" CornerRadius="8"
                               Padding="15" MaxHeight="400">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <ItemsControl ItemsSource="{Binding AssetFolders}">
@@ -190,9 +190,8 @@
                                             <CheckBox IsChecked="{Binding IsSelected}" Margin="0,4">
                                                 <CheckBox.Content>
                                                     <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Text="📁 " />
-                                                        <TextBlock Text="{Binding Name}" />
-                                                        <TextBlock Text="/" />
+                                                        <TextBlock Text="📁 " FontFamily="Consolas" />
+                                                        <TextBlock Text="{Binding DisplayName}" FontFamily="Consolas" />
                                                         <TextBlock Text=" (" Foreground="#6C757D" />
                                                         <TextBlock Text="{Binding FileCount}" Foreground="#6C757D" />
                                                         <TextBlock Text=" files)" Foreground="#6C757D" />
@@ -287,14 +286,34 @@
                         <Border Style="{DynamicResource StatusPanel}">
                             <StackPanel>
                                 <TextBlock Text="{Binding StatusMessage}" Margin="0,0,0,10" />
-                                <ProgressBar Value="{Binding ProgressValue}" Height="6" 
+                                <ProgressBar Value="{Binding ProgressValue}" Height="6"
                                            Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisibilityConverter}}" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Error Display Area (selectable/copyable) -->
+                        <Border Background="#FFF5F5" BorderBrush="#FECACA" BorderThickness="1"
+                              CornerRadius="8" Padding="15" Margin="0,15,0,0"
+                              Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel>
+                                <TextBlock Text="⚠️ Error Details (select and copy with Ctrl+C):"
+                                         Foreground="#DC3545" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                                <TextBox Text="{Binding ErrorMessage, Mode=OneWay}"
+                                       IsReadOnly="True"
+                                       TextWrapping="Wrap"
+                                       MaxHeight="200"
+                                       VerticalScrollBarVisibility="Auto"
+                                       Background="White"
+                                       BorderBrush="#FECACA"
+                                       Padding="10"
+                                       FontFamily="Consolas"
+                                       FontSize="12"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </StackPanel>
             </Border>
-            
+
             <!-- Phase 4: Namespace Cleanup -->
             <Border Style="{DynamicResource PhaseSection}">
                 <StackPanel>
@@ -308,10 +327,19 @@
                     </Border>
                     
                     <StackPanel Margin="20">
-                        <TextBlock Text="Review and exclude unwanted namespaces from your package" 
+                        <TextBlock Text="Review and exclude unwanted namespaces from your package"
                                  Foreground="#6C757D" Margin="0,0,0,15"/>
-                        
-                        <Border Background="#F8F9FA" CornerRadius="8" 
+
+                        <CheckBox IsChecked="{Binding ExcludeAllNamespaces}" IsThreeState="True" Margin="0,0,0,10" FontWeight="SemiBold">
+                            <CheckBox.Content>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="🧹 " />
+                                    <TextBlock Text="Exclude All Namespaces" />
+                                </StackPanel>
+                            </CheckBox.Content>
+                        </CheckBox>
+
+                        <Border Background="#F8F9FA" CornerRadius="8"
                               Padding="10" MaxHeight="400">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <ItemsControl ItemsSource="{Binding Namespaces}">

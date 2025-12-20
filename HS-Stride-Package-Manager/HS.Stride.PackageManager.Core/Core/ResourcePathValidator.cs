@@ -7,6 +7,25 @@ namespace HS.Stride.Packer.Core
 {
     public class ResourcePathValidator
     {
+        private AssetScanner? _assetScanner;
+        private string? _scannerProjectPath;
+
+        /// <summary>
+        /// Gets or initializes the AssetScanner for robust source file resolution.
+        /// The scanner indexes all source files in the project for fast filename-based lookups.
+        /// </summary>
+        private AssetScanner GetOrCreateScanner(string projectPath)
+        {
+            // Create new scanner if none exists or if project path changed
+            if (_assetScanner == null || _scannerProjectPath != projectPath)
+            {
+                _assetScanner = new AssetScanner(projectPath);
+                _assetScanner.Scan();
+                _scannerProjectPath = projectPath;
+            }
+            return _assetScanner;
+        }
+
         public ValidationResult ValidateProject(string projectPath)
         {
             var result = new ValidationResult();
@@ -89,32 +108,35 @@ namespace HS.Stride.Packer.Core
             return references;
         }
         
-        private void ValidateResourcePath(string assetFile, ResourceReference resourceRef, 
+        private void ValidateResourcePath(string assetFile, ResourceReference resourceRef,
                                          string projectPath, ValidationResult result)
         {
-            var assetDir = Path.GetDirectoryName(assetFile);
-            if (assetDir == null) return;
-            
-            var fullResourcePath = Path.GetFullPath(Path.Combine(assetDir, resourceRef.ResourcePath));
-            var projectFullPath = Path.GetFullPath(projectPath);
-            
-            if (!fullResourcePath.StartsWith(projectFullPath, StringComparison.OrdinalIgnoreCase))
+            // Use the robust FindActualResourceFile which leverages the AssetScanner
+            var actualResourcePath = FindActualResourceFile(resourceRef.ResourcePath, assetFile, projectPath);
+
+            if (!string.IsNullOrEmpty(actualResourcePath))
             {
-                result.ExternalResources.Add(new ExternalResourceIssue
+                // Found the file - check if it's external to the project
+                var projectFullPath = Path.GetFullPath(projectPath);
+                if (!actualResourcePath.StartsWith(projectFullPath, StringComparison.OrdinalIgnoreCase))
                 {
-                    AssetFile = assetFile,
-                    ResourcePath = resourceRef.ResourcePath
-                });
+                    result.ExternalResources.Add(new ExternalResourceIssue
+                    {
+                        AssetFile = assetFile,
+                        ResourcePath = resourceRef.ResourcePath
+                    });
+                }
+                // File found and is within project - valid
             }
-            else if (!File.Exists(fullResourcePath))
+            else
             {
+                // Could not find the resource anywhere
                 result.MissingResources.Add(new MissingResourceIssue
                 {
                     AssetFile = assetFile,
                     ResourcePath = resourceRef.ResourcePath
                 });
             }
-
         }
         private List<ResourceReference> ScanForResourceReferencesEnhanced(string filePath)
         {
@@ -140,13 +162,28 @@ namespace HS.Stride.Packer.Core
                 });
             }
             
-            // Pattern 2: Source: any/path/resource.ext
+            // Pattern 2: Source: any/path/resource.ext (may include !file prefix)
             var sourcePattern = @"Source:\s*([^\r\n]+)";
             var sourceMatches = Regex.Matches(content, sourcePattern);
-            
+
             foreach (Match match in sourceMatches)
             {
                 var sourcePath = match.Groups[1].Value.Trim();
+
+                // Strip !file prefix if present (Stride uses "Source: !file path/to/file")
+                if (sourcePath.StartsWith("!file ", StringComparison.OrdinalIgnoreCase))
+                {
+                    sourcePath = sourcePath.Substring(6).Trim();
+                }
+                else if (sourcePath.StartsWith("!file", StringComparison.OrdinalIgnoreCase))
+                {
+                    sourcePath = sourcePath.Substring(5).Trim();
+                }
+
+                // Skip if it's a null reference or empty
+                if (string.IsNullOrEmpty(sourcePath) || sourcePath == "null")
+                    continue;
+
                 references.Add(new ResourceReference
                 {
                     AssetFile = filePath,
@@ -244,44 +281,25 @@ namespace HS.Stride.Packer.Core
 
         private string FindActualResourceFile(string resourcePath, string assetFilePath, string projectPath)
         {
-            // Try different ways to resolve the resource path
-            
-            // 1. Try relative to the asset file
-            var assetDir = Path.GetDirectoryName(assetFilePath) ?? "";
-            var relativeToAsset = Path.Combine(assetDir, resourcePath);
-            if (File.Exists(relativeToAsset))
-                return Path.GetFullPath(relativeToAsset);
-            
-            // 2. Try relative to project root
-            var relativeToProject = Path.Combine(projectPath, resourcePath);
-            if (File.Exists(relativeToProject))
-                return Path.GetFullPath(relativeToProject);
-            
-            // 3. Try as absolute path
+            // Use AssetScanner for robust source file resolution
+            // This indexes all source files and can find them even when moved
+            var scanner = GetOrCreateScanner(projectPath);
+            var assetDir = Path.GetDirectoryName(assetFilePath);
+
+            // The scanner tries multiple strategies:
+            // 1. Relative to asset file directory
+            // 2. Relative to project root
+            // 3. Indexed path lookup
+            // 4. Filename-based search with path similarity scoring
+            var foundPath = scanner.FindSourceFileRobust(resourcePath, assetDir);
+
+            if (!string.IsNullOrEmpty(foundPath))
+                return foundPath;
+
+            // Additional fallback: try as absolute path (for external references)
             if (Path.IsPathRooted(resourcePath) && File.Exists(resourcePath))
                 return Path.GetFullPath(resourcePath);
-            
-            // 4. Search in common resource locations
-            var fileName = Path.GetFileName(resourcePath);
-            var searchPaths = new[]
-            {
-                Path.Combine(projectPath, "Resources"),
-                Path.Combine(projectPath, "Assets", "Resources"),
-                Path.Combine(projectPath, "Assets"),
-                projectPath
-            };
-            
-            foreach (var searchPath in searchPaths)
-            {
-                if (Directory.Exists(searchPath))
-                {
-                    var foundFile = Directory.GetFiles(searchPath, fileName, SearchOption.AllDirectories)
-                        .FirstOrDefault();
-                    if (foundFile != null)
-                        return foundFile;
-                }
-            }
-            
+
             return string.Empty;
         }
 
