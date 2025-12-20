@@ -551,6 +551,7 @@ namespace HS.Stride.Packer.Core
 
                             // Update references in all affected asset files
                             var oldFileName = Path.GetFileName(resource.CurrentRelativePath);
+                            var oldFullPath = resource.FullPath;
                             var newFullPath = targetPath;
 
                             if (filenamesToAssets.TryGetValue(oldFileName, out var affectedAssets))
@@ -559,7 +560,8 @@ namespace HS.Stride.Packer.Core
                                 {
                                     if (assetContents.TryGetValue(assetPath, out var content))
                                     {
-                                        var updatedContent = UpdateAssetContent(content, assetPath, oldFileName, newFullPath);
+                                        // Pass the old full path so we only update the SPECIFIC reference, not all files with same name
+                                        var updatedContent = UpdateAssetContent(content, assetPath, oldFullPath, newFullPath);
                                         if (updatedContent != content)
                                         {
                                             assetContents[assetPath] = updatedContent;
@@ -599,14 +601,20 @@ namespace HS.Stride.Packer.Core
         /// <summary>
         /// Updates asset content with new resource path. Returns updated content string.
         /// Uses line-by-line parsing for reliability (similar to HS.Stride.Editor.Toolkit approach)
+        /// Only updates references that match the SPECIFIC old path, not just any file with the same name.
         /// </summary>
-        private string UpdateAssetContent(string content, string assetFullPath, string oldFileName, string newFullPath)
+        private string UpdateAssetContent(string content, string assetFullPath, string oldFullPath, string newFullPath)
         {
+            var oldFileName = Path.GetFileName(oldFullPath);
+
             // Quick check - does this file even mention the filename?
             if (!content.Contains(oldFileName, StringComparison.OrdinalIgnoreCase))
                 return content;
 
             var assetDir = Path.GetDirectoryName(assetFullPath)!;
+
+            // Calculate what the old path looks like relative to this asset file
+            var oldRelative = Path.GetRelativePath(assetDir, oldFullPath).Replace('\\', '/');
             var newRelative = Path.GetRelativePath(assetDir, newFullPath).Replace('\\', '/');
 
             var lines = content.Split('\n');
@@ -621,9 +629,16 @@ namespace HS.Stride.Packer.Core
                 if (!trimmed.Contains(oldFileName, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                // Pattern 1: Source: !file path/to/file.ext
+                // Pattern 1: Source: !file path/to/file.ext or Source: path/to/file.ext
                 if (trimmed.StartsWith("Source:", StringComparison.OrdinalIgnoreCase))
                 {
+                    // Extract the current path from the line
+                    var currentPath = ExtractPathFromSourceLine(trimmed);
+
+                    // Only update if this line references the SPECIFIC file we're moving
+                    if (!PathsMatch(currentPath, oldRelative, oldFileName))
+                        continue;
+
                     var indent = line.Substring(0, line.Length - line.TrimStart().Length);
 
                     if (trimmed.Contains("!file", StringComparison.OrdinalIgnoreCase))
@@ -642,20 +657,89 @@ namespace HS.Stride.Packer.Core
                 if (trimmed.Contains("!file", StringComparison.OrdinalIgnoreCase) &&
                     trimmed.Contains("\"", StringComparison.Ordinal))
                 {
-                    var newLine = Regex.Replace(line,
-                        $@"(!file\s+"")[^""]*{Regex.Escape(oldFileName)}("")",
-                        $"$1{newRelative}$2",
-                        RegexOptions.IgnoreCase);
-
-                    if (newLine != line)
+                    // Extract path from quoted !file reference
+                    var match = Regex.Match(trimmed, @"!file\s+""([^""]+)""", RegexOptions.IgnoreCase);
+                    if (match.Success)
                     {
-                        lines[i] = newLine;
-                        modified = true;
+                        var currentPath = match.Groups[1].Value;
+
+                        // Only update if this line references the SPECIFIC file we're moving
+                        if (!PathsMatch(currentPath, oldRelative, oldFileName))
+                            continue;
+
+                        var newLine = line.Replace(currentPath, newRelative);
+                        if (newLine != line)
+                        {
+                            lines[i] = newLine;
+                            modified = true;
+                        }
                     }
                 }
             }
 
             return modified ? string.Join("\n", lines) : content;
+        }
+
+        /// <summary>
+        /// Extracts the path from a Source: line (handles both "Source: path" and "Source: !file path")
+        /// </summary>
+        private string ExtractPathFromSourceLine(string trimmedLine)
+        {
+            // Remove "Source:" prefix
+            var afterSource = trimmedLine.Substring(7).Trim();
+
+            // Remove "!file" if present
+            if (afterSource.StartsWith("!file", StringComparison.OrdinalIgnoreCase))
+            {
+                afterSource = afterSource.Substring(5).Trim();
+            }
+
+            // Remove quotes if present
+            afterSource = afterSource.Trim('"');
+
+            return afterSource;
+        }
+
+        /// <summary>
+        /// Checks if the path in the asset file matches the resource we're moving.
+        /// </summary>
+        private bool PathsMatch(string pathInAsset, string expectedRelativePath, string fileName)
+        {
+            if (string.IsNullOrEmpty(pathInAsset))
+                return false;
+
+            // Normalize path separators
+            var normalizedAssetPath = pathInAsset.Replace('\\', '/');
+            var normalizedExpected = expectedRelativePath.Replace('\\', '/');
+
+            // Direct match (most common case)
+            if (normalizedAssetPath.Equals(normalizedExpected, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // Strip leading ../ from both paths and compare the rest
+            // This handles cases where the relative depth might differ slightly
+            var strippedAssetPath = StripRelativePrefix(normalizedAssetPath);
+            var strippedExpected = StripRelativePrefix(normalizedExpected);
+
+            if (strippedAssetPath.Equals(strippedExpected, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// Strips leading ../ and ./ from a path
+        /// </summary>
+        private string StripRelativePrefix(string path)
+        {
+            while (path.StartsWith("../") || path.StartsWith("./"))
+            {
+                if (path.StartsWith("../"))
+                    path = path.Substring(3);
+                else if (path.StartsWith("./"))
+                    path = path.Substring(2);
+            }
+            return path;
         }
     }
 
