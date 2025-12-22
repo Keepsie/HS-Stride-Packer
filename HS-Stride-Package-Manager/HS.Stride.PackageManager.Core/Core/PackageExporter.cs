@@ -187,13 +187,14 @@ namespace HS.Stride.Packer.Core
                 
             if (gameFolder != null)
             {
-                var subFolders = GetCodeSubFolders(gameFolder);
+                var gameFolderName = Path.GetFileName(gameFolder);
+                var subFolders = GetCodeSubFolders(gameFolder, gameFolderName);
                 if (subFolders.Any())
                 {
-                    codeFolders.Add(new CodeFolderInfo 
-                    { 
-                        Name = Path.GetFileName(gameFolder), 
-                        Path = gameFolder, 
+                    codeFolders.Add(new CodeFolderInfo
+                    {
+                        Name = gameFolderName,
+                        Path = gameFolder,
                         Type = "Game (Shared Code - Template)",
                         SubFolders = subFolders
                     });
@@ -204,13 +205,13 @@ namespace HS.Stride.Packer.Core
             var projectFolder = Path.Combine(projectPath, projectName);
             if (Directory.Exists(projectFolder) && gameFolder == null) // Only if no .Game folder exists
             {
-                var subFolders = GetCodeSubFolders(projectFolder);
+                var subFolders = GetCodeSubFolders(projectFolder, projectName);
                 if (subFolders.Any())
                 {
-                    codeFolders.Add(new CodeFolderInfo 
-                    { 
-                        Name = projectName, 
-                        Path = projectFolder, 
+                    codeFolders.Add(new CodeFolderInfo
+                    {
+                        Name = projectName,
+                        Path = projectFolder,
                         Type = "Game (Shared Code - Fresh)",
                         SubFolders = subFolders
                     });
@@ -229,14 +230,15 @@ namespace HS.Stride.Packer.Core
 
             foreach (var platformFolder in platformFolders)
             {
-                var subFolders = GetCodeSubFolders(platformFolder);
+                var platformFolderName = Path.GetFileName(platformFolder);
+                var subFolders = GetCodeSubFolders(platformFolder, platformFolderName);
                 if (subFolders.Any())
                 {
-                    var platformName = Path.GetFileName(platformFolder).Split('.').Last();
-                    codeFolders.Add(new CodeFolderInfo 
-                    { 
-                        Name = Path.GetFileName(platformFolder), 
-                        Path = platformFolder, 
+                    var platformName = platformFolderName.Split('.').Last();
+                    codeFolders.Add(new CodeFolderInfo
+                    {
+                        Name = platformFolderName,
+                        Path = platformFolder,
                         Type = $"Platform ({platformName})",
                         SubFolders = subFolders
                     });
@@ -560,16 +562,32 @@ namespace HS.Stride.Packer.Core
 
         
         //Folder Fetching
-        private List<string> GetCodeSubFolders(string projectPath)
+        private List<CodeSubFolderInfo> GetCodeSubFolders(string projectPath, string projectName)
         {
             if (!Directory.Exists(projectPath))
-                return new List<string>();
+                return new List<CodeSubFolderInfo>();
 
-            return Directory.GetDirectories(projectPath, "*", SearchOption.TopDirectoryOnly)
+            // Get ALL subdirectories recursively (like assets do)
+            // Include folder if it OR any subfolder contains .cs files
+            var allFolders = Directory.GetDirectories(projectPath, "*", SearchOption.AllDirectories)
                 .Where(dir => Directory.GetFiles(dir, "*.cs", SearchOption.AllDirectories).Any())
-                .Select(Path.GetFileName)
-                .Where(name => !string.IsNullOrEmpty(name))
+                .Select(path =>
+                {
+                    var relativePath = Path.GetRelativePath(projectPath, path).Replace('\\', '/');
+                    var depth = relativePath.Split('/').Length - 1;
+                    return new CodeSubFolderInfo
+                    {
+                        Name = Path.GetFileName(path),
+                        FullPath = path,
+                        RelativePath = $"{projectName}/{relativePath}",
+                        FileCount = Directory.GetFiles(path, "*.cs", SearchOption.TopDirectoryOnly).Length,
+                        Depth = depth
+                    };
+                })
+                .OrderBy(folder => folder.RelativePath)
                 .ToList();
+
+            return allFolders;
         }
         
         
@@ -620,12 +638,15 @@ namespace HS.Stride.Packer.Core
                 }
             }
 
-            // Phase 2: Copy selected code folders (shared)
-            foreach (var codeFolder in settings.SelectedCodeFolders ?? new List<string>())
+            // Phase 2: Copy selected code folders (shared), preserving subfolder structure
+            // Filter out child folders if their parent is also selected (parent includes children)
+            var codeFoldersToProcess = FilterRedundantChildFolders(settings.SelectedCodeFolders ?? new List<string>());
+
+            foreach (var codeFolder in codeFoldersToProcess)
             {
                 var sourceCodePath = Path.Combine(sourcePath, codeFolder);
-                var codeFolderName = Path.GetFileName(codeFolder.TrimEnd('/'));
-                var targetCodePath = Path.Combine(tempDir, settings.Manifest.Name, codeFolderName);
+                // Preserve the relative path structure (e.g., "MyGame.Game/Core/Player" -> "MyGame.Game/Core/Player")
+                var targetCodePath = Path.Combine(tempDir, settings.Manifest.Name, codeFolder);
 
                 if (Directory.Exists(sourceCodePath))
                 {
@@ -791,7 +812,18 @@ namespace HS.Stride.Packer.Core
         public string Name { get; set; } = string.Empty;
         public string Path { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
-        public List<string> SubFolders { get; set; } = new();
+        public List<CodeSubFolderInfo> SubFolders { get; set; } = new();
+    }
+
+    public class CodeSubFolderInfo
+    {
+        public string Name { get; set; } = string.Empty;
+        public string FullPath { get; set; } = string.Empty;
+        public string RelativePath { get; set; } = string.Empty;
+        public int FileCount { get; set; }
+        public int Depth { get; set; }
+
+        public string DisplayName => new string(' ', Depth * 2) + (Depth > 0 ? "└─ " : "") + Name;
     }
 }
 

@@ -375,10 +375,10 @@ namespace HS.Stride.Packer.UI.ViewModels
                 .Select(af => af.RelativePath)
                 .ToList();
 
-            // Save selected code folders
+            // Save selected code folders (use RelativePath for full subfolder structure)
             preset.SelectedCodeFolders = CodeProjects
                 .Where(cp => cp.IsSelected)
-                .SelectMany(cp => cp.SubFolders.Where(sf => sf.IsSelected).Select(sf => $"{cp.Name}/{sf.Name}"))
+                .SelectMany(cp => cp.SubFolders.Where(sf => sf.IsSelected).Select(sf => sf.RelativePath))
                 .ToList();
 
             // Save excluded namespaces
@@ -464,14 +464,13 @@ namespace HS.Stride.Packer.UI.ViewModels
             }
             UpdateSelectAllAssets();
 
-            // Apply code folder selections (match by project/subfolder path)
+            // Apply code folder selections (match by RelativePath for full subfolder structure)
             var savedCodeFolders = new HashSet<string>(preset.SelectedCodeFolders, StringComparer.OrdinalIgnoreCase);
             foreach (var codeProject in CodeProjects)
             {
                 foreach (var subFolder in codeProject.SubFolders)
                 {
-                    var folderPath = $"{codeProject.Name}/{subFolder.Name}";
-                    subFolder.IsSelected = savedCodeFolders.Contains(folderPath);
+                    subFolder.IsSelected = savedCodeFolders.Contains(subFolder.RelativePath);
                 }
             }
 
@@ -560,7 +559,10 @@ namespace HS.Stride.Packer.UI.ViewModels
                 {
                     var subFolderItem = new CodeSubFolderItem
                     {
-                        Name = subFolder,
+                        Name = subFolder.Name,
+                        RelativePath = subFolder.RelativePath,
+                        FileCount = subFolder.FileCount,
+                        Depth = subFolder.Depth,
                         Parent = projectItem,
                         IsSelected = false
                     };
@@ -756,10 +758,10 @@ namespace HS.Stride.Packer.UI.ViewModels
                 .Select(af => af.RelativePath)
                 .ToList();
 
-            // Collect selected code folders
+            // Collect selected code folders (use RelativePath for full subfolder structure)
             settings.SelectedCodeFolders = CodeProjects
                 .Where(cp => cp.IsSelected)
-                .SelectMany(cp => cp.SubFolders.Where(sf => sf.IsSelected).Select(sf => $"{cp.Name}/{sf.Name}"))
+                .SelectMany(cp => cp.SubFolders.Where(sf => sf.IsSelected).Select(sf => sf.RelativePath))
                 .ToList();
 
             // Collect excluded namespaces
@@ -940,7 +942,12 @@ namespace HS.Stride.Packer.UI.ViewModels
         private bool _isSelected = false;
 
         public string Name { get; set; } = "";
+        public string RelativePath { get; set; } = "";
+        public int FileCount { get; set; }
+        public int Depth { get; set; }
         public CodeProjectItem? Parent { get; set; }
+
+        public string DisplayName => new string(' ', Depth * 2) + (Depth > 0 ? "└─ " : "") + Name;
 
         public bool IsSelected
         {
