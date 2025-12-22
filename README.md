@@ -90,6 +90,8 @@ Exporting is simple but can be complex depending on what you're packaging.
 - **Resource Validation:** Ensures all dependencies are within your project
 - **Namespace Scanning:** Detects and allows cleanup of namespace references
 
+> 💡 **Pro Tip:** If you plan to update your package regularly, save it as a template. Next time, just load the template and increase the version number - no need to re-select all your folders and settings!
+
 > ⚠️ **External Resource Blocking:** If a resource (like a texture) is outside your project (e.g., in Downloads/), the export will fail with a clear error. This prevents creating broken packages where users would be missing required files.
 
 **Resource Organization:**

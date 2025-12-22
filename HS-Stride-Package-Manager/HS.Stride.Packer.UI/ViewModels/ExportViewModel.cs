@@ -527,12 +527,16 @@ namespace HS.Stride.Packer.UI.ViewModels
             AssetFolders.Clear();
             foreach (var folder in assetFolders)
             {
+                // Check if this folder has any children
+                var hasChildren = assetFolders.Any(f => f.RelativePath.StartsWith(folder.RelativePath + "/"));
+
                 AssetFolders.Add(new AssetFolderItem
                 {
                     Name = folder.Name,
                     RelativePath = folder.RelativePath,  // Full path for export
                     FileCount = folder.FileCount,
                     Depth = folder.Depth,  // For hierarchical display
+                    HasChildren = hasChildren,
                     IsSelected = true,
                     FullPath = folder.FullPath,
                     Parent = this
@@ -557,12 +561,16 @@ namespace HS.Stride.Packer.UI.ViewModels
 
                 foreach (var subFolder in project.SubFolders)
                 {
+                    // Check if this folder has any children
+                    var hasChildren = project.SubFolders.Any(f => f.RelativePath.StartsWith(subFolder.RelativePath + "/"));
+
                     var subFolderItem = new CodeSubFolderItem
                     {
                         Name = subFolder.Name,
                         RelativePath = subFolder.RelativePath,
                         FileCount = subFolder.FileCount,
                         Depth = subFolder.Depth,
+                        HasChildren = hasChildren,
                         Parent = projectItem,
                         IsSelected = false
                     };
@@ -821,6 +829,25 @@ namespace HS.Stride.Packer.UI.ViewModels
             OnPropertyChanged(nameof(SelectAllAssets));
         }
 
+        public void UpdateAssetFolderVisibility()
+        {
+            foreach (var folder in AssetFolders)
+            {
+                // Check if any ancestor is collapsed
+                bool isVisible = true;
+                foreach (var potentialParent in AssetFolders)
+                {
+                    // If potentialParent's path is a prefix of folder's path (and not the same), it's an ancestor
+                    if (folder.RelativePath.StartsWith(potentialParent.RelativePath + "/") && !potentialParent.IsExpanded)
+                    {
+                        isVisible = false;
+                        break;
+                    }
+                }
+                folder.IsVisible = isVisible;
+            }
+        }
+
         #endregion
 
         #region INotifyPropertyChanged
@@ -850,18 +877,34 @@ namespace HS.Stride.Packer.UI.ViewModels
     public class AssetFolderItem : INotifyPropertyChanged
     {
         private bool _isSelected = true;
+        private bool _isExpanded = true;
 
         public string Name { get; set; } = "";
         public string RelativePath { get; set; } = "";  // Full relative path for export
         public int FileCount { get; set; }
         public string FullPath { get; set; } = "";
         public int Depth { get; set; }  // Depth level for hierarchy display
+        public bool HasChildren { get; set; }  // Whether this folder has subfolders
         public ExportViewModel? Parent { get; set; }
 
         /// <summary>
         /// Display name with indentation for hierarchical view
         /// </summary>
         public string DisplayName => Depth > 0 ? $"{"   ".PadLeft(Depth * 3)}└─ {Name}" : Name;
+
+        public bool IsExpanded
+        {
+            get => _isExpanded;
+            set
+            {
+                if (_isExpanded != value)
+                {
+                    _isExpanded = value;
+                    OnPropertyChanged();
+                    Parent?.UpdateAssetFolderVisibility();
+                }
+            }
+        }
 
         public bool IsSelected
         {
@@ -873,6 +916,20 @@ namespace HS.Stride.Packer.UI.ViewModels
                     _isSelected = value;
                     OnPropertyChanged();
                     Parent?.UpdateSelectAllAssets();
+                }
+            }
+        }
+
+        private bool _isVisible = true;
+        public bool IsVisible
+        {
+            get => _isVisible;
+            set
+            {
+                if (_isVisible != value)
+                {
+                    _isVisible = value;
+                    OnPropertyChanged();
                 }
             }
         }
@@ -930,6 +987,25 @@ namespace HS.Stride.Packer.UI.ViewModels
             }
         }
 
+        public void UpdateSubFolderVisibility()
+        {
+            foreach (var folder in SubFolders)
+            {
+                // Check if any ancestor is collapsed
+                bool isVisible = true;
+                foreach (var potentialParent in SubFolders)
+                {
+                    // If potentialParent's path is a prefix of folder's path (and not the same), it's an ancestor
+                    if (folder.RelativePath.StartsWith(potentialParent.RelativePath + "/") && !potentialParent.IsExpanded)
+                    {
+                        isVisible = false;
+                        break;
+                    }
+                }
+                folder.IsVisible = isVisible;
+            }
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
@@ -940,14 +1016,44 @@ namespace HS.Stride.Packer.UI.ViewModels
     public class CodeSubFolderItem : INotifyPropertyChanged
     {
         private bool _isSelected = false;
+        private bool _isExpanded = true;
+        private bool _isVisible = true;
 
         public string Name { get; set; } = "";
         public string RelativePath { get; set; } = "";
         public int FileCount { get; set; }
         public int Depth { get; set; }
+        public bool HasChildren { get; set; }  // Whether this folder has subfolders
         public CodeProjectItem? Parent { get; set; }
 
         public string DisplayName => new string(' ', Depth * 2) + (Depth > 0 ? "└─ " : "") + Name;
+
+        public bool IsExpanded
+        {
+            get => _isExpanded;
+            set
+            {
+                if (_isExpanded != value)
+                {
+                    _isExpanded = value;
+                    OnPropertyChanged();
+                    Parent?.UpdateSubFolderVisibility();
+                }
+            }
+        }
+
+        public bool IsVisible
+        {
+            get => _isVisible;
+            set
+            {
+                if (_isVisible != value)
+                {
+                    _isVisible = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         public bool IsSelected
         {
