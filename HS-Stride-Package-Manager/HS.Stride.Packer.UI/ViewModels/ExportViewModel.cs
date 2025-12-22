@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using HS.Stride.Packer.Core;
+using HS.Stride.Packer.UI.Services;
 using HS.Stride.Packer.Utilities;
 
 namespace HS.Stride.Packer.UI.ViewModels
@@ -17,6 +18,7 @@ namespace HS.Stride.Packer.UI.ViewModels
         private readonly PackageExporter _packageExporter;
         private readonly NamespaceScanner _namespaceScanner;
         private readonly ResourcePathValidator _resourceValidator;
+        private readonly SettingsManager _settingsManager;
         private StridePackageManager? _packageManager;
 
         // Package Information
@@ -38,12 +40,16 @@ namespace HS.Stride.Packer.UI.ViewModels
         private ObservableCollection<CodeProjectItem> _codeProjects = new();
         private ObservableCollection<NamespaceItem> _namespaces = new();
 
+        // For storing preset to apply after scan completes
+        private ExportPreset? _pendingPreset;
+
         // Progress and Status
         private bool _isProcessing;
         private string _statusMessage = "Ready to create package";
         private string _errorMessage = "";
         private double _progressValue;
         private bool _canCreatePackage;
+        private string _templateSaveStatus = "";
 
         public ExportViewModel()
         {
@@ -51,11 +57,14 @@ namespace HS.Stride.Packer.UI.ViewModels
             _resourceValidator = new ResourcePathValidator();
             _namespaceScanner = new NamespaceScanner();
             _packageExporter = new PackageExporter(_resourceValidator, _namespaceScanner);
+            _settingsManager = new SettingsManager();
 
             // Initialize commands
             BrowseProjectCommand = new RelayCommand(BrowseProject);
             BrowseExportLocationCommand = new RelayCommand(BrowseExportLocation);
             CreatePackageCommand = new RelayCommand(CreatePackage, () => CanCreatePackage);
+            SavePresetCommand = new RelayCommand(SavePreset);
+            LoadPresetCommand = new RelayCommand(LoadPreset);
 
             // Initialize default values
             ExportLocation = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\Downloads";
@@ -284,6 +293,12 @@ namespace HS.Stride.Packer.UI.ViewModels
             set => SetProperty(ref _canCreatePackage, value);
         }
 
+        public string TemplateSaveStatus
+        {
+            get => _templateSaveStatus;
+            set => SetProperty(ref _templateSaveStatus, value);
+        }
+
         #endregion
 
         #region Commands
@@ -291,6 +306,8 @@ namespace HS.Stride.Packer.UI.ViewModels
         public ICommand BrowseProjectCommand { get; }
         public ICommand BrowseExportLocationCommand { get; }
         public ICommand CreatePackageCommand { get; }
+        public ICommand SavePresetCommand { get; }
+        public ICommand LoadPresetCommand { get; }
 
         #endregion
 
@@ -331,6 +348,141 @@ namespace HS.Stride.Packer.UI.ViewModels
             }
         }
 
+        private void SavePreset()
+        {
+            if (string.IsNullOrWhiteSpace(PackageName))
+            {
+                TemplateSaveStatus = "Enter package name first";
+                return;
+            }
+
+            var preset = new ExportPreset
+            {
+                PackageName = PackageName,
+                Version = Version,
+                StrideVersion = StrideVersion,
+                Author = Author,
+                Description = Description,
+                Tags = Tags,
+                ProjectPath = ProjectPath,
+                ExportLocation = ExportLocation,
+                SavedDate = DateTime.UtcNow
+            };
+
+            // Save selected asset folders
+            preset.SelectedAssetFolders = AssetFolders
+                .Where(af => af.IsSelected)
+                .Select(af => af.RelativePath)
+                .ToList();
+
+            // Save selected code folders (use RelativePath for full subfolder structure)
+            preset.SelectedCodeFolders = CodeProjects
+                .Where(cp => cp.IsSelected)
+                .SelectMany(cp => cp.SubFolders.Where(sf => sf.IsSelected).Select(sf => sf.RelativePath))
+                .ToList();
+
+            // Save excluded namespaces
+            preset.ExcludedNamespaces = Namespaces
+                .Where(ns => ns.IsExcluded)
+                .Select(ns => ns.Name)
+                .ToList();
+
+            _settingsManager.SavePreset(preset);
+            TemplateSaveStatus = "Saved!";
+
+            // Clear the status after 3 seconds
+            var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+            timer.Tick += (s, e) =>
+            {
+                TemplateSaveStatus = "";
+                timer.Stop();
+            };
+            timer.Start();
+        }
+
+        private void LoadPreset()
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Load Template",
+                Filter = "Template Files (*.json)|*.json",
+                InitialDirectory = _settingsManager.PresetsFolder,
+                CheckFileExists = true
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                var preset = _settingsManager.LoadPreset(dialog.FileName);
+                if (preset == null)
+                {
+                    System.Windows.MessageBox.Show("Failed to load template file.", "Load Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                ApplyPreset(preset);
+            }
+        }
+
+        private void ApplyPreset(ExportPreset preset)
+        {
+            // Apply basic settings
+            PackageName = preset.PackageName;
+            Version = preset.Version;
+            StrideVersion = preset.StrideVersion;
+            Author = preset.Author;
+            Description = preset.Description;
+            Tags = preset.Tags;
+            ExportLocation = preset.ExportLocation;
+
+            // Store preset to apply after scan completes
+            _pendingPreset = preset;
+
+            // Set project path (this will trigger a rescan, which will apply selections when done)
+            if (!string.IsNullOrEmpty(preset.ProjectPath) && Directory.Exists(preset.ProjectPath))
+            {
+                ProjectPath = preset.ProjectPath;
+            }
+            else if (!string.IsNullOrEmpty(preset.ProjectPath))
+            {
+                _pendingPreset = null;
+                System.Windows.MessageBox.Show($"Project path not found: {preset.ProjectPath}\nOther template values have been restored.", "Project Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void ApplyPresetSelections()
+        {
+            if (_pendingPreset == null) return;
+
+            var preset = _pendingPreset;
+            _pendingPreset = null;
+
+            // Apply asset folder selections (match by relative path)
+            var savedAssets = new HashSet<string>(preset.SelectedAssetFolders, StringComparer.OrdinalIgnoreCase);
+            foreach (var assetFolder in AssetFolders)
+            {
+                assetFolder.IsSelected = savedAssets.Contains(assetFolder.RelativePath);
+            }
+            UpdateSelectAllAssets();
+
+            // Apply code folder selections (match by RelativePath for full subfolder structure)
+            var savedCodeFolders = new HashSet<string>(preset.SelectedCodeFolders, StringComparer.OrdinalIgnoreCase);
+            foreach (var codeProject in CodeProjects)
+            {
+                foreach (var subFolder in codeProject.SubFolders)
+                {
+                    subFolder.IsSelected = savedCodeFolders.Contains(subFolder.RelativePath);
+                }
+            }
+
+            // Apply namespace exclusions (match by name)
+            var savedExclusions = new HashSet<string>(preset.ExcludedNamespaces, StringComparer.OrdinalIgnoreCase);
+            foreach (var ns in Namespaces)
+            {
+                ns.IsExcluded = savedExclusions.Contains(ns.Name);
+            }
+            UpdateExcludeAllNamespaces();
+        }
+
         private async void RefreshProject()
         {
             if (string.IsNullOrEmpty(ProjectPath) || !IsProjectValid)
@@ -350,6 +502,9 @@ namespace HS.Stride.Packer.UI.ViewModels
 
                 await ScanNamespacesAsync();
                 ProgressValue = 100;
+
+                // Apply preset selections if loading from template
+                ApplyPresetSelections();
 
                 StatusMessage = "Project scan complete";
                 UpdateCanCreatePackage();
@@ -372,12 +527,16 @@ namespace HS.Stride.Packer.UI.ViewModels
             AssetFolders.Clear();
             foreach (var folder in assetFolders)
             {
+                // Check if this folder has any children
+                var hasChildren = assetFolders.Any(f => f.RelativePath.StartsWith(folder.RelativePath + "/"));
+
                 AssetFolders.Add(new AssetFolderItem
                 {
                     Name = folder.Name,
                     RelativePath = folder.RelativePath,  // Full path for export
                     FileCount = folder.FileCount,
                     Depth = folder.Depth,  // For hierarchical display
+                    HasChildren = hasChildren,
                     IsSelected = true,
                     FullPath = folder.FullPath,
                     Parent = this
@@ -388,7 +547,7 @@ namespace HS.Stride.Packer.UI.ViewModels
         private async Task ScanCodeProjectsAsync()
         {
             var codeProjects = await Task.Run(() => _packageExporter.ScanForCodeFolders(ProjectPath));
-            
+
             CodeProjects.Clear();
             foreach (var project in codeProjects)
             {
@@ -396,17 +555,24 @@ namespace HS.Stride.Packer.UI.ViewModels
                 {
                     Name = project.Name,
                     Type = project.Type,
-                    IsSelected = false, // Start all projects unselected
+                    IsSelected = false,
                     SubFolders = new ObservableCollection<CodeSubFolderItem>()
                 };
 
                 foreach (var subFolder in project.SubFolders)
                 {
+                    // Check if this folder has any children
+                    var hasChildren = project.SubFolders.Any(f => f.RelativePath.StartsWith(subFolder.RelativePath + "/"));
+
                     var subFolderItem = new CodeSubFolderItem
                     {
-                        Name = subFolder,
+                        Name = subFolder.Name,
+                        RelativePath = subFolder.RelativePath,
+                        FileCount = subFolder.FileCount,
+                        Depth = subFolder.Depth,
+                        HasChildren = hasChildren,
                         Parent = projectItem,
-                        IsSelected = false  // Start unselected
+                        IsSelected = false
                     };
                     projectItem.SubFolders.Add(subFolderItem);
                 }
@@ -600,10 +766,10 @@ namespace HS.Stride.Packer.UI.ViewModels
                 .Select(af => af.RelativePath)
                 .ToList();
 
-            // Collect selected code folders
+            // Collect selected code folders (use RelativePath for full subfolder structure)
             settings.SelectedCodeFolders = CodeProjects
                 .Where(cp => cp.IsSelected)
-                .SelectMany(cp => cp.SubFolders.Where(sf => sf.IsSelected).Select(sf => $"{cp.Name}/{sf.Name}"))
+                .SelectMany(cp => cp.SubFolders.Where(sf => sf.IsSelected).Select(sf => sf.RelativePath))
                 .ToList();
 
             // Collect excluded namespaces
@@ -652,15 +818,34 @@ namespace HS.Stride.Packer.UI.ViewModels
             }
 
             var selectedCount = AssetFolders.Count(af => af.IsSelected);
-            
+
             if (selectedCount == 0)
                 _selectAllAssets = false;
             else if (selectedCount == AssetFolders.Count)
                 _selectAllAssets = true;
             else
                 _selectAllAssets = null; // Indeterminate state
-                
+
             OnPropertyChanged(nameof(SelectAllAssets));
+        }
+
+        public void UpdateAssetFolderVisibility()
+        {
+            foreach (var folder in AssetFolders)
+            {
+                // Check if any ancestor is collapsed
+                bool isVisible = true;
+                foreach (var potentialParent in AssetFolders)
+                {
+                    // If potentialParent's path is a prefix of folder's path (and not the same), it's an ancestor
+                    if (folder.RelativePath.StartsWith(potentialParent.RelativePath + "/") && !potentialParent.IsExpanded)
+                    {
+                        isVisible = false;
+                        break;
+                    }
+                }
+                folder.IsVisible = isVisible;
+            }
         }
 
         #endregion
@@ -692,18 +877,34 @@ namespace HS.Stride.Packer.UI.ViewModels
     public class AssetFolderItem : INotifyPropertyChanged
     {
         private bool _isSelected = true;
+        private bool _isExpanded = true;
 
         public string Name { get; set; } = "";
         public string RelativePath { get; set; } = "";  // Full relative path for export
         public int FileCount { get; set; }
         public string FullPath { get; set; } = "";
         public int Depth { get; set; }  // Depth level for hierarchy display
+        public bool HasChildren { get; set; }  // Whether this folder has subfolders
         public ExportViewModel? Parent { get; set; }
 
         /// <summary>
         /// Display name with indentation for hierarchical view
         /// </summary>
         public string DisplayName => Depth > 0 ? $"{"   ".PadLeft(Depth * 3)}└─ {Name}" : Name;
+
+        public bool IsExpanded
+        {
+            get => _isExpanded;
+            set
+            {
+                if (_isExpanded != value)
+                {
+                    _isExpanded = value;
+                    OnPropertyChanged();
+                    Parent?.UpdateAssetFolderVisibility();
+                }
+            }
+        }
 
         public bool IsSelected
         {
@@ -715,6 +916,20 @@ namespace HS.Stride.Packer.UI.ViewModels
                     _isSelected = value;
                     OnPropertyChanged();
                     Parent?.UpdateSelectAllAssets();
+                }
+            }
+        }
+
+        private bool _isVisible = true;
+        public bool IsVisible
+        {
+            get => _isVisible;
+            set
+            {
+                if (_isVisible != value)
+                {
+                    _isVisible = value;
+                    OnPropertyChanged();
                 }
             }
         }
@@ -743,7 +958,7 @@ namespace HS.Stride.Packer.UI.ViewModels
                 {
                     _isSelected = value;
                     OnPropertyChanged();
-                    
+
                     // Update all subfolders
                     foreach (var subFolder in SubFolders)
                     {
@@ -757,27 +972,37 @@ namespace HS.Stride.Packer.UI.ViewModels
         {
             var selectedCount = SubFolders.Count(sf => sf.IsSelected);
             var newSelection = false;
-            
-            // Update parent selection based on children
+
             if (selectedCount == 0)
-            {
                 newSelection = false;
-            }
             else if (selectedCount == SubFolders.Count)
-            {
                 newSelection = true;
-            }
             else
-            {
-                // Partial selection - set to true to show something is selected
                 newSelection = true;
-            }
-            
-            // Only update if it actually changed
+
             if (_isSelected != newSelection)
             {
                 _isSelected = newSelection;
                 OnPropertyChanged(nameof(IsSelected));
+            }
+        }
+
+        public void UpdateSubFolderVisibility()
+        {
+            foreach (var folder in SubFolders)
+            {
+                // Check if any ancestor is collapsed
+                bool isVisible = true;
+                foreach (var potentialParent in SubFolders)
+                {
+                    // If potentialParent's path is a prefix of folder's path (and not the same), it's an ancestor
+                    if (folder.RelativePath.StartsWith(potentialParent.RelativePath + "/") && !potentialParent.IsExpanded)
+                    {
+                        isVisible = false;
+                        break;
+                    }
+                }
+                folder.IsVisible = isVisible;
             }
         }
 
@@ -791,9 +1016,44 @@ namespace HS.Stride.Packer.UI.ViewModels
     public class CodeSubFolderItem : INotifyPropertyChanged
     {
         private bool _isSelected = false;
+        private bool _isExpanded = true;
+        private bool _isVisible = true;
 
         public string Name { get; set; } = "";
+        public string RelativePath { get; set; } = "";
+        public int FileCount { get; set; }
+        public int Depth { get; set; }
+        public bool HasChildren { get; set; }  // Whether this folder has subfolders
         public CodeProjectItem? Parent { get; set; }
+
+        public string DisplayName => new string(' ', Depth * 2) + (Depth > 0 ? "└─ " : "") + Name;
+
+        public bool IsExpanded
+        {
+            get => _isExpanded;
+            set
+            {
+                if (_isExpanded != value)
+                {
+                    _isExpanded = value;
+                    OnPropertyChanged();
+                    Parent?.UpdateSubFolderVisibility();
+                }
+            }
+        }
+
+        public bool IsVisible
+        {
+            get => _isVisible;
+            set
+            {
+                if (_isVisible != value)
+                {
+                    _isVisible = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         public bool IsSelected
         {

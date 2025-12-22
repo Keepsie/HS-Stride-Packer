@@ -1,25 +1,36 @@
 ﻿<UserControl x:Class="HS.Stride.Packer.UI.Views.ExportView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:HS.Stride.Packer.UI.Views"
-             mc:Ignorable="d" 
+             mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+    </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto" 
                 Background="White" Padding="30" Margin="10,0,-10,0">
         <StackPanel>
             <!-- Tab Header -->
             <StackPanel Margin="0,0,0,20" HorizontalAlignment="Center">
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10" HorizontalAlignment="Center">
-                    <TextBlock Text="📤" FontSize="18" Margin="0,0,8,0" 
+                    <TextBlock Text="📤" FontSize="18" Margin="0,0,8,0"
                              Foreground="{DynamicResource StrideBlue}"/>
-                    <TextBlock Text="Create Package" FontSize="20" 
-                             FontWeight="SemiBold" 
+                    <TextBlock Text="Create Package" FontSize="20"
+                             FontWeight="SemiBold"
                              Foreground="Black"/>
                 </StackPanel>
-                <TextBlock Text="Export your Stride project components as a reusable package" 
+                <TextBlock Text="Export your Stride project components as a reusable package"
                          Foreground="#6C757D" FontSize="14" HorizontalAlignment="Center"/>
+
+                <!-- Load Template Button (at top where you start) -->
+                <Button Content="📂 Load Saved Template"
+                      Command="{Binding LoadPresetCommand}"
+                      Padding="12,8" Margin="0,12,0,0"
+                      Background="#F8F9FA" BorderBrush="#DEE2E6"
+                      Foreground="#495057"
+                      BorderThickness="1" FontSize="13"/>
             </StackPanel>
             
             <!-- Project Setup -->
@@ -187,17 +198,59 @@
                                 <ItemsControl ItemsSource="{Binding AssetFolders}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <CheckBox IsChecked="{Binding IsSelected}" Margin="0,4">
-                                                <CheckBox.Content>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Text="📁 " FontFamily="Consolas" />
-                                                        <TextBlock Text="{Binding DisplayName}" FontFamily="Consolas" />
-                                                        <TextBlock Text=" (" Foreground="#6C757D" />
-                                                        <TextBlock Text="{Binding FileCount}" Foreground="#6C757D" />
-                                                        <TextBlock Text=" files)" Foreground="#6C757D" />
-                                                    </StackPanel>
-                                                </CheckBox.Content>
-                                            </CheckBox>
+                                            <StackPanel Orientation="Horizontal" Margin="0,4"
+                                                        Visibility="{Binding IsVisible, Converter={StaticResource BoolToVisibility}}">
+                                                <!-- Expand/Collapse Toggle -->
+                                                <ToggleButton IsChecked="{Binding IsExpanded}"
+                                                              Width="18" Height="18" Margin="0,0,4,0"
+                                                              Background="Transparent" BorderThickness="0"
+                                                              Visibility="{Binding HasChildren, Converter={StaticResource BoolToVisibility}}"
+                                                              Cursor="Hand">
+                                                    <ToggleButton.Style>
+                                                        <Style TargetType="ToggleButton">
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="ToggleButton">
+                                                                        <Border Background="Transparent">
+                                                                            <TextBlock x:Name="Arrow" Text="▶" FontSize="10"
+                                                                                       VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                                                       Foreground="#6C757D"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsChecked" Value="True">
+                                                                                <Setter TargetName="Arrow" Property="Text" Value="▼"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </ToggleButton.Style>
+                                                </ToggleButton>
+                                                <!-- Spacer for items without children -->
+                                                <Border Width="18" Margin="0,0,4,0">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding HasChildren}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                </Border>
+                                                <CheckBox IsChecked="{Binding IsSelected}">
+                                                    <CheckBox.Content>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="📁 " FontFamily="Consolas" />
+                                                            <TextBlock Text="{Binding DisplayName}" FontFamily="Consolas" />
+                                                            <TextBlock Text=" (" Foreground="#6C757D" />
+                                                            <TextBlock Text="{Binding FileCount}" Foreground="#6C757D" />
+                                                            <TextBlock Text=" files)" Foreground="#6C757D" />
+                                                        </StackPanel>
+                                                    </CheckBox.Content>
+                                                </CheckBox>
+                                            </StackPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
@@ -206,25 +259,25 @@
                     </StackPanel>
                 </StackPanel>
             </Border>
-            
+
             <!-- Phase 2: Code Selection -->
             <Border Style="{DynamicResource PhaseSection}">
                 <StackPanel>
-                    <Border Background="{DynamicResource TitleGradient}" 
+                    <Border Background="{DynamicResource TitleGradient}"
                           CornerRadius="8,8,0,0" Padding="15,15,20,15"
                           BorderBrush="#E9ECEF" BorderThickness="0,0,0,1">
-                        <TextBlock Foreground="{DynamicResource StrideDark}" 
+                        <TextBlock Foreground="{DynamicResource StrideDark}"
                                  FontWeight="SemiBold" FontSize="16">
                             💻 Phase 2: Code Selection
                         </TextBlock>
                     </Border>
-                    
+
                     <StackPanel Margin="20">
-                        <TextBlock Text="Select which code folders to include in your package" 
+                        <TextBlock Text="Select which code folders to include in your package"
                                  Foreground="#6C757D" Margin="0,0,0,15"/>
-                        
+
                         <Label Content="Code Projects" FontWeight="SemiBold"/>
-                        <Border Background="#F8F9FA" CornerRadius="8" 
+                        <Border Background="#F8F9FA" CornerRadius="8"
                               Padding="15" MaxHeight="400">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <ItemsControl ItemsSource="{Binding CodeProjects}">
@@ -245,15 +298,59 @@
                                                 <ItemsControl ItemsSource="{Binding SubFolders}" Margin="20,0,0,0">
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
-                                                            <CheckBox IsChecked="{Binding IsSelected}" Margin="0,2">
-                                                                <CheckBox.Content>
-                                                                    <StackPanel Orientation="Horizontal">
-                                                                        <TextBlock Text="📁 " />
-                                                                        <TextBlock Text="{Binding Name}" />
-                                                                        <TextBlock Text="/" />
-                                                                    </StackPanel>
-                                                                </CheckBox.Content>
-                                                            </CheckBox>
+                                                            <StackPanel Orientation="Horizontal" Margin="0,4"
+                                                                        Visibility="{Binding IsVisible, Converter={StaticResource BoolToVisibility}}">
+                                                                <!-- Expand/Collapse Toggle -->
+                                                                <ToggleButton IsChecked="{Binding IsExpanded}"
+                                                                              Width="18" Height="18" Margin="0,0,4,0"
+                                                                              Background="Transparent" BorderThickness="0"
+                                                                              Visibility="{Binding HasChildren, Converter={StaticResource BoolToVisibility}}"
+                                                                              Cursor="Hand">
+                                                                    <ToggleButton.Style>
+                                                                        <Style TargetType="ToggleButton">
+                                                                            <Setter Property="Template">
+                                                                                <Setter.Value>
+                                                                                    <ControlTemplate TargetType="ToggleButton">
+                                                                                        <Border Background="Transparent">
+                                                                                            <TextBlock x:Name="Arrow" Text="▶" FontSize="10"
+                                                                                                       VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                                                                       Foreground="#6C757D"/>
+                                                                                        </Border>
+                                                                                        <ControlTemplate.Triggers>
+                                                                                            <Trigger Property="IsChecked" Value="True">
+                                                                                                <Setter TargetName="Arrow" Property="Text" Value="▼"/>
+                                                                                            </Trigger>
+                                                                                        </ControlTemplate.Triggers>
+                                                                                    </ControlTemplate>
+                                                                                </Setter.Value>
+                                                                            </Setter>
+                                                                        </Style>
+                                                                    </ToggleButton.Style>
+                                                                </ToggleButton>
+                                                                <!-- Spacer for items without children -->
+                                                                <Border Width="18" Margin="0,0,4,0">
+                                                                    <Border.Style>
+                                                                        <Style TargetType="Border">
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding HasChildren}" Value="True">
+                                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </Border.Style>
+                                                                </Border>
+                                                                <CheckBox IsChecked="{Binding IsSelected}">
+                                                                    <CheckBox.Content>
+                                                                        <StackPanel Orientation="Horizontal">
+                                                                            <TextBlock Text="📁 " FontFamily="Consolas" />
+                                                                            <TextBlock Text="{Binding DisplayName}" FontFamily="Consolas" />
+                                                                            <TextBlock Text=" (" Foreground="#6C757D" />
+                                                                            <TextBlock Text="{Binding FileCount}" Foreground="#6C757D" />
+                                                                            <TextBlock Text=" files)" Foreground="#6C757D" />
+                                                                        </StackPanel>
+                                                                    </CheckBox.Content>
+                                                                </CheckBox>
+                                                            </StackPanel>
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
@@ -266,7 +363,7 @@
                     </StackPanel>
                 </StackPanel>
             </Border>
-            
+
             <!-- Phase 3: Resource Detection -->
             <Border Style="{DynamicResource PhaseSection}">
                 <StackPanel>
@@ -395,11 +492,23 @@
             
             <!-- Action Buttons -->
             <Separator Margin="0,20"/>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <Button Content="📦 Create Package" 
+            <StackPanel HorizontalAlignment="Center">
+                <!-- Save Template (at bottom where you finish) -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,12">
+                    <Button Content="💾 Save as Template"
+                          Command="{Binding SavePresetCommand}"
+                          Padding="12,8"
+                          Background="#F8F9FA" BorderBrush="#DEE2E6"
+                          Foreground="#495057"
+                          BorderThickness="1" FontSize="13"/>
+                    <TextBlock Text="{Binding TemplateSaveStatus}"
+                             Foreground="#28A745" FontSize="12" FontWeight="SemiBold"
+                             VerticalAlignment="Center" Margin="10,0,0,0"/>
+                </StackPanel>
+                <Button Content="📦 Create Package"
                       Command="{Binding CreatePackageCommand}"
                       IsEnabled="{Binding CanCreatePackage}"
-                      Style="{DynamicResource StrideButton}" 
+                      Style="{DynamicResource StrideButton}"
                       Padding="20,12" FontSize="16"/>
             </StackPanel>
         </StackPanel>

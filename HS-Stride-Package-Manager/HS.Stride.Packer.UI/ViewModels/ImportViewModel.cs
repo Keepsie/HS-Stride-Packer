@@ -267,13 +267,17 @@ namespace HS.Stride.Packer.UI.ViewModels
 
         private void BrowsePackageFile()
         {
+            // Default to HSPacker cache folder in Documents where store downloads are saved
+            var hspackerCache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "HSPacker");
+
             var dialog = new Microsoft.Win32.OpenFileDialog
             {
                 Title = "Select Stride Package File",
                 Filter = "Stride Package Files (*.stridepackage)|*.stridepackage|All Files (*.*)|*.*",
                 CheckFileExists = true,
                 CheckPathExists = true,
-                Multiselect = false
+                Multiselect = false,
+                InitialDirectory = Directory.Exists(hspackerCache) ? hspackerCache : ""
             };
 
             if (dialog.ShowDialog() == true)
