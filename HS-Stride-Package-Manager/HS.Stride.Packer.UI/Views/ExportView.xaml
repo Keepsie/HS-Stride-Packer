@@ -12,14 +12,22 @@
             <!-- Tab Header -->
             <StackPanel Margin="0,0,0,20" HorizontalAlignment="Center">
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10" HorizontalAlignment="Center">
-                    <TextBlock Text="📤" FontSize="18" Margin="0,0,8,0" 
+                    <TextBlock Text="📤" FontSize="18" Margin="0,0,8,0"
                              Foreground="{DynamicResource StrideBlue}"/>
-                    <TextBlock Text="Create Package" FontSize="20" 
-                             FontWeight="SemiBold" 
+                    <TextBlock Text="Create Package" FontSize="20"
+                             FontWeight="SemiBold"
                              Foreground="Black"/>
                 </StackPanel>
-                <TextBlock Text="Export your Stride project components as a reusable package" 
+                <TextBlock Text="Export your Stride project components as a reusable package"
                          Foreground="#6C757D" FontSize="14" HorizontalAlignment="Center"/>
+
+                <!-- Load Template Button (at top where you start) -->
+                <Button Content="📂 Load Saved Template"
+                      Command="{Binding LoadPresetCommand}"
+                      Padding="12,8" Margin="0,12,0,0"
+                      Background="#F8F9FA" BorderBrush="#DEE2E6"
+                      Foreground="#495057"
+                      BorderThickness="1" FontSize="13"/>
             </StackPanel>
             
             <!-- Project Setup -->
@@ -210,21 +218,21 @@
             <!-- Phase 2: Code Selection -->
             <Border Style="{DynamicResource PhaseSection}">
                 <StackPanel>
-                    <Border Background="{DynamicResource TitleGradient}" 
+                    <Border Background="{DynamicResource TitleGradient}"
                           CornerRadius="8,8,0,0" Padding="15,15,20,15"
                           BorderBrush="#E9ECEF" BorderThickness="0,0,0,1">
-                        <TextBlock Foreground="{DynamicResource StrideDark}" 
+                        <TextBlock Foreground="{DynamicResource StrideDark}"
                                  FontWeight="SemiBold" FontSize="16">
                             💻 Phase 2: Code Selection
                         </TextBlock>
                     </Border>
-                    
+
                     <StackPanel Margin="20">
-                        <TextBlock Text="Select which code folders to include in your package" 
+                        <TextBlock Text="Select which code folders to include in your package"
                                  Foreground="#6C757D" Margin="0,0,0,15"/>
-                        
+
                         <Label Content="Code Projects" FontWeight="SemiBold"/>
-                        <Border Background="#F8F9FA" CornerRadius="8" 
+                        <Border Background="#F8F9FA" CornerRadius="8"
                               Padding="15" MaxHeight="400">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <ItemsControl ItemsSource="{Binding CodeProjects}">
@@ -395,11 +403,23 @@
             
             <!-- Action Buttons -->
             <Separator Margin="0,20"/>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <Button Content="📦 Create Package" 
+            <StackPanel HorizontalAlignment="Center">
+                <!-- Save Template (at bottom where you finish) -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,12">
+                    <Button Content="💾 Save as Template"
+                          Command="{Binding SavePresetCommand}"
+                          Padding="12,8"
+                          Background="#F8F9FA" BorderBrush="#DEE2E6"
+                          Foreground="#495057"
+                          BorderThickness="1" FontSize="13"/>
+                    <TextBlock Text="{Binding TemplateSaveStatus}"
+                             Foreground="#28A745" FontSize="12" FontWeight="SemiBold"
+                             VerticalAlignment="Center" Margin="10,0,0,0"/>
+                </StackPanel>
+                <Button Content="📦 Create Package"
                       Command="{Binding CreatePackageCommand}"
                       IsEnabled="{Binding CanCreatePackage}"
-                      Style="{DynamicResource StrideButton}" 
+                      Style="{DynamicResource StrideButton}"
                       Padding="20,12" FontSize="16"/>
             </StackPanel>
         </StackPanel>
