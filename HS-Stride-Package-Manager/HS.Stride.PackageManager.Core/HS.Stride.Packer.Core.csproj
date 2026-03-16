@@ -4,20 +4,33 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <!-- Package Metadata -->
     <Version>1.3.0</Version>
     <AssemblyVersion>1.3.0.0</AssemblyVersion>
     <FileVersion>1.3.0.0</FileVersion>
-    <Copyright>© 2025 Happenstance Games LLC</Copyright>
+    <PackageId>HS.Stride.Packer.Core</PackageId>
+    <Title>HS Stride Packer</Title>
     <Authors>Happenstance Games LLC</Authors>
     <Company>Happenstance Games LLC</Company>
     <Product>HS Stride Packer</Product>
-    <Description>Core library for packaging and managing Stride Engine libraries</Description>
+    <Description>Package creation and import library for Stride Game Engine. Create, import, and share libraries, assets, and complete projects as .stridepackage files with automatic dependency handling, namespace cleanup, and registry support.</Description>
+    <Copyright>Copyright © 2025 Happenstance Games LLC</Copyright>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Keepsie/HS-Stride-Packer</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Keepsie/HS-Stride-Packer</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>stride;stride-engine;game-engine;package-manager;library-sharing;asset-management;namespace-cleanup;dependency-handling</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <None Include="..\..\README.md" Pack="true" PackagePath="\" Condition="Exists('..\..\README.md')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 
 </Project>

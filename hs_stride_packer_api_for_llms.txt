@@ -1,0 +1,634 @@
+HS STRIDE PACKER CORE - LLM API REFERENCE
+=========================================
+Version: 1.0.0 | .NET 8.0 | Package: HS.Stride.Packer.Core
+Copyright (c) 2025 Happenstance Games LLC | Apache License 2.0
+
+Create, import, and manage Stride game engine packages (.stridepackage files).
+Handles asset organization, namespace management, resource validation, and registry operations.
+
+================================================================================
+QUICK START
+================================================================================
+
+### Create a Package
+```csharp
+using HS.Stride.Packer.Core;
+
+var settings = new ExportSettings
+{
+    LibraryPath = @"C:\MyStrideProject",
+    OutputPath = @"C:\Output\MyLibrary.stridepackage",
+    Manifest = new PackageManifest
+    {
+        Name = "MyLibrary",
+        Version = "1.0.0",
+        Description = "Custom Stride assets",
+        Author = "Your Name",
+        StrideVersion = "4.2+",
+        Tags = new List<string> { "effects", "materials" }
+    },
+    SelectedAssetFolders = new List<string> { "Assets/MyAssets" }
+};
+
+var manager = new StridePackageManager(settings);
+var packagePath = await manager.CreatePackageAsync();
+```
+
+### Import a Package
+```csharp
+var importSettings = new ImportSettings
+{
+    PackagePath = @"C:\MyLibrary.stridepackage",
+    TargetProjectPath = @"C:\TargetProject",
+    OverwriteExistingFiles = true
+};
+
+var manager = new StridePackageManager(new ExportSettings());
+var result = await manager.ImportPackageAsync(importSettings);
+Console.WriteLine($"Imported {result.TotalFilesImported} files");
+```
+
+================================================================================
+STRIDEPACKAGEMANAGER (Main Entry Point)
+================================================================================
+Namespace: HS.Stride.Packer.Core
+
+Constructor:
+  new StridePackageManager(ExportSettings exportSettings)
+
+Constants:
+  static readonly string DefaultRegistryUrl
+
+--- Validation ---
+  Task<ValidationResult> ValidateForExportAsync(string libraryPath)
+  Task<ValidationResult> ValidateForImportAsync(string packagePath, string targetProjectPath)
+
+--- Project Scanning ---
+  ProjectScanResult ScanProject(string projectPath)
+
+--- Package Creation ---
+  Task<string> CreatePackageAsync()
+
+--- Package Download & Integrity ---
+  Task<string> DownloadPackageAsync(string url)
+  Task<bool> VerifyPackageIntegrityAsync(string packagePath)
+
+--- Registry Management ---
+  void SetRegistryUrl(string registryUrl)
+  Task<List<PackageMetadata>> GetRegistryPackagesAsync(string? registryUrl = null)
+  Task<RegistryInfo> GetRegistryInfoAsync(string? registryUrl = null)
+  Task<List<PackageMetadata>> SearchPackagesAsync(string query, string? registryUrl = null)
+  Task<List<PackageMetadata>> FilterPackagesByTagsAsync(List<string> tags, string? registryUrl = null)
+
+--- Package Caching ---
+  Task<string> DownloadPackageToCacheAsync(PackageMetadata package)
+  Task<List<CachedPackage>> GetCachedPackagesAsync()
+  bool IsPackageCached(PackageMetadata package)
+  string? GetCachedPackagePath(PackageMetadata package)
+  Task<ImportResult> InstallCachedPackageAsync(PackageMetadata package, string targetProjectPath)
+  Task<bool> ClearPackageCacheAsync(PackageMetadata package)
+  string GetCacheDirectory()
+
+--- Package Import ---
+  Task<ImportResult> ImportPackageAsync(ImportSettings importSettings)
+  ValidationResult ValidateImportSettings(ImportSettings importSettings)
+
+================================================================================
+EXPORTSETTINGS (Package Creation Config)
+================================================================================
+
+```csharp
+public class ExportSettings
+{
+    // Basic
+    string LibraryPath              // Source Stride project path
+    string OutputPath               // Output .stridepackage path
+    PackageManifest Manifest        // Package metadata
+
+    // Filtering
+    List<string> ExcludeNamespaces  // Namespaces to exclude
+    List<string> IncludeFiles       // Specific files to include
+    List<string> ExcludeFiles       // Specific files to exclude
+
+    // Asset Selection
+    List<string> SelectedAssetFolders     // Asset folders to include
+
+    // Code Selection
+    List<string> SelectedCodeFolders      // Code folders to include
+    List<string> SelectedPlatformFolders  // Platform-specific folders
+
+    // Resources
+    List<ResourceDependency> ResourceDependencies
+    string TargetResourcePath
+
+    // Output
+    bool ExportRegistryJson = true  // Generate registry JSON alongside package
+}
+```
+
+================================================================================
+IMPORTSETTINGS (Package Import Config)
+================================================================================
+
+```csharp
+public class ImportSettings
+{
+    string PackagePath          // Path to .stridepackage file
+    string TargetProjectPath    // Target Stride project
+    bool OverwriteExistingFiles = true
+}
+```
+
+================================================================================
+PACKAGEMANIFEST (Package Metadata)
+================================================================================
+
+```csharp
+public class PackageManifest
+{
+    // Core Info
+    string Name
+    string Version
+    string Description
+    string Author
+    string StrideVersion
+    DateTime CreatedDate
+
+    // Contents
+    List<NamespaceReference> Namespaces
+    string PackageHash              // SHA-256
+    List<string> Tags               // "UI", "effects", "materials", etc.
+
+    // Structure
+    ProjectStructureType StructureType  // Fresh, Template, Unknown
+    string ProjectName
+
+    // Resource Mapping
+    Dictionary<string, string> ResourcePathMappings
+    string ResourceTargetPath
+
+    // Registry (Optional)
+    string? DownloadUrl
+    string? Homepage
+    string? Repository
+    string? License
+}
+```
+
+ProjectStructureType enum:
+  Unknown, Fresh, Template
+
+================================================================================
+VALIDATIONRESULT
+================================================================================
+
+```csharp
+public class ValidationResult
+{
+    List<ExternalResourceIssue> ExternalResources
+    List<MissingResourceIssue> MissingResources
+    List<string> Errors
+    List<string> Warnings
+    List<ResourceDependency> ResourceDependencies
+
+    bool IsValid                    // No critical issues
+    bool HasCriticalIssues
+
+    string GetReport()              // Formatted report
+}
+
+public class ExternalResourceIssue
+{
+    string AssetFile
+    string ResourcePath
+}
+
+public class MissingResourceIssue
+{
+    string AssetFile
+    string ResourcePath
+}
+```
+
+================================================================================
+IMPORTRESULT
+================================================================================
+
+```csharp
+public class ImportResult
+{
+    string ImportPath
+    List<string> ImportedFiles
+    List<string> CreatedDirectories
+    List<string> OverwrittenItems
+    List<string> SkippedItems
+    PackageManifest? Manifest
+
+    bool HasConflicts
+    int TotalFilesImported
+}
+```
+
+================================================================================
+PROJECTSCANRESULT
+================================================================================
+
+```csharp
+public class ProjectScanResult
+{
+    List<ProjectItem> AllItems
+    List<ProjectItem> Files
+    List<ProjectItem> Folders
+
+    long TotalSize
+    int FileCount
+    int FolderCount
+}
+
+public class ProjectItem
+{
+    string Name
+    string RelativePath
+    string FullPath
+    bool IsFile
+    long Size
+    string DisplaySize
+}
+```
+
+================================================================================
+ASSETSCANNER (Asset Discovery)
+================================================================================
+Namespace: HS.Stride.Packer.Core
+
+Constructor:
+  new AssetScanner(string projectPath)
+
+Methods:
+  void Scan()
+  void EnsureScanned()
+
+  ScannedAsset? FindAssetByGuid(string guid)
+  ScannedAsset? FindAssetByPath(string relativePath)
+  ScannedAsset? FindAssetByName(string name)
+  List<ScannedAsset> FindAssets(string pattern)    // Supports * and ?
+  List<ScannedAsset> GetAllAssets()
+
+  string? FindSourceFile(string fileName)
+  List<string> FindSourceFilesByName(string fileName)
+  string? FindSourceFileByPath(string relativePath)
+  string? FindSourceFileRobust(string resourcePath, string? relativeToDir = null)
+
+  int SourceFileCount { get; }
+
+```csharp
+public class ScannedAsset
+{
+    string Guid
+    string Name
+    string RelativePath
+    string RelativePathWithExtension
+    string FullPath
+    string AssetType
+    string Extension
+    string Reference              // "guid:relativePath"
+}
+```
+
+Asset Types: Prefab, Model, Material, Texture, Scene, Sound, Animation, Skeleton,
+SpriteSheet, Sprite, Effect, UIPage, UILibrary, SpriteFont, Skybox, Video,
+RenderTexture, GameSettings, GraphicsCompositor, Archetype, ColliderShape,
+ConvexHull, RawAsset, Unknown
+
+================================================================================
+RESOURCEPATHVALIDATOR
+================================================================================
+
+Constructor:
+  new ResourcePathValidator()
+
+Methods:
+  ValidationResult ValidateProject(string projectPath)
+  ValidationResult ValidateAndCollectDependencies(string projectPath, List<string> selectedAssetFolders)
+
+================================================================================
+RESOURCEDEPENDENCY
+================================================================================
+
+```csharp
+public class ResourceDependency
+{
+    string FileName
+    string OriginalPath
+    string ActualPath
+    string ReferencedInAsset
+    List<ResourceReference> References
+
+    string AssetFilePath
+    string OriginalPathInAsset
+    string NewResourcePath
+}
+
+public class ResourceReference
+{
+    string AssetFile
+    string ResourcePath
+    int LineNumber
+    ResourceReferenceType Type      // FileReference, SourceReference, EmbeddedReference
+}
+```
+
+================================================================================
+PACKAGEEXPORTER
+================================================================================
+
+Constructor:
+  new PackageExporter(ResourcePathValidator resourceValidator, NamespaceScanner namespaceScanner)
+
+Methods:
+  Task<string> ExportPackageAsync(ExportSettings settings)
+  ValidationResult ValidateSettings(ExportSettings settings)
+  List<AssetFolderInfo> ScanForAssetFolders(string projectPath)
+  List<CodeFolderInfo> ScanForCodeFolders(string projectPath)
+
+```csharp
+public class AssetFolderInfo
+{
+    string Name
+    string FullPath
+    string RelativePath
+    int FileCount
+    string Location               // "Root" or "Nested"
+    int Depth
+    string DisplayName
+}
+
+public class CodeFolderInfo
+{
+    string Name
+    string Path
+    string Type
+    List<CodeSubFolderInfo> SubFolders
+}
+```
+
+================================================================================
+PACKAGEIMPORTER
+================================================================================
+
+Constructor:
+  new PackageImporter()
+
+Methods:
+  Task<ImportResult> ImportPackageAsync(ImportSettings settings)
+  ValidationResult ValidateSettings(ImportSettings settings)
+
+================================================================================
+NAMESPACESCANNER
+================================================================================
+
+Constructor:
+  new NamespaceScanner()
+
+Methods:
+  List<NamespaceReference> ScanDirectory(string path)
+  List<NamespaceReference> ScanDirectory(string path, List<string>? excludeNamespaces)
+  List<string> ScanFile(string filePath)
+
+```csharp
+public class NamespaceReference
+{
+    string Namespace
+    List<string> FoundInFiles
+}
+```
+
+================================================================================
+PROJECTSCANNER
+================================================================================
+
+Constructor:
+  new ProjectScanner()
+
+Methods:
+  ProjectScanResult ScanProject(string projectPath)
+
+================================================================================
+PACKAGEREGISTRY (Registry Operations)
+================================================================================
+
+Constructors:
+  new PackageRegistry()
+  new PackageRegistry(HttpClient httpClient, string? customCacheDirectory = null)
+
+Registry Methods:
+  void SetRegistryUrl(string registryUrl)
+  Task<RegistryInfo> GetRegistryInfoAsync(string? registryUrl = null)
+  Task<List<PackageMetadata>> GetAllPackagesAsync(string? registryUrl = null)
+  Task<PackageMetadata?> GetPackageMetadataAsync(string packageMetadataUrl)
+  Task<List<PackageMetadata>> SearchPackagesAsync(string query, string? registryUrl = null)
+  Task<List<PackageMetadata>> FilterByTagsAsync(List<string> tags, string? registryUrl = null)
+
+Cache Methods:
+  string GetCacheDirectory()
+  Task<string> DownloadPackageToCache(PackageMetadata package)
+  Task<List<CachedPackage>> GetCachedPackages()
+  bool IsPackageCached(PackageMetadata package)
+  string? GetCachedPackagePath(PackageMetadata package)
+  Task<bool> ClearPackageCache(PackageMetadata package)
+
+```csharp
+public class RegistryInfo
+{
+    string Name
+    string Description
+    string Updated
+    List<string> Packages           // URLs to package metadata
+}
+
+public class PackageMetadata
+{
+    string Name
+    string Version
+    string Description
+    string Author
+    List<string> Tags
+    string StrideVersion
+    DateTime Created
+    string DownloadUrl
+    string Homepage
+    string Repository
+    string License
+}
+
+public class CachedPackage
+{
+    PackageMetadata Metadata
+    string CachedPath
+    DateTime CachedDate
+    long Size
+    string DisplaySize
+}
+```
+
+================================================================================
+PROJECTCLEANUPSERVICE (Cleanup & Organization)
+================================================================================
+
+Constructor:
+  new ProjectCleanupService(string projectPath)
+
+Methods:
+  Task<CleanupAnalysis> AnalyzeProjectAsync()
+  Task<CleanupResult> DeleteOrphansAsync(IEnumerable<OrphanedResource> orphans)
+  Task<CleanupResult> DeleteFoldersAsync(IEnumerable<OrphanedFolder> folders)
+  Task<CleanupResult> CleanEmptyFoldersAsync()
+  Task<CleanupResult> ReorganizeResourcesAsync(IEnumerable<MisplacedResource> resources)
+
+```csharp
+public class CleanupAnalysis
+{
+    int TotalAssets
+    int TotalResources
+    List<OrphanedResource> OrphanedResources
+    List<MisplacedResource> MisplacedResources
+    List<EmptyFolder> EmptyFolders
+    List<OrphanedFolder> OrphanedFolders
+    List<string> Errors
+
+    long TotalOrphanedSize
+    bool HasIssues
+}
+
+public class OrphanedResource
+{
+    string FullPath
+    string RelativePath
+    string FileName
+    long SizeBytes
+    string Extension
+    bool IsSelected
+    string SizeDisplay
+}
+
+public class MisplacedResource
+{
+    string FullPath
+    string CurrentRelativePath
+    string SuggestedRelativePath
+    string ReferencingAsset
+    string FileName
+    bool IsSelected
+}
+
+public class CleanupResult
+{
+    List<string> DeletedFiles
+    List<string> DeletedFolders
+    List<string> MovedFiles
+    List<string> Errors
+
+    bool HasErrors
+    int TotalActions
+}
+```
+
+================================================================================
+PACKAGE FORMAT
+================================================================================
+
+File Extension: .stridepackage (ZIP archive)
+
+Contents:
+  manifest.json           # Package metadata + SHA-256 hash
+  Assets/                 # All selected asset files (.sdprefab, .sdmat, etc.)
+  Resources/              # All resource dependencies (textures, models, audio)
+  [PackageName]/          # Code and platform-specific folders
+  stridepackage.json      # Optional registry metadata (alongside .stridepackage)
+
+================================================================================
+SUPPORTED FILE TYPES
+================================================================================
+
+Resource Files:
+  Images: .png .jpg .jpeg .tga .dds .bmp .gif .tiff .webp .hdr
+  Models: .fbx .obj .dae .gltf .glb .3ds .blend
+  Audio:  .wav .ogg .mp3 .flac .aiff
+  Video:  .mp4 .avi .mov .wmv .webm
+  Fonts:  .ttf .otf
+  Data:   .json .xml .csv .txt .yaml .yml
+
+Stride Assets:
+  .sdprefab .sdm3d .sdmat .sdtex .sdscene .sdsnd .sdanim .sdskel
+  .sdsheet .sdsprite .sdfx .sdpage .sduilib .sdspritefnt .sdfnt
+  .sdskybox .sdvideo .sdrendertex .sdgamesettings .sdgfxcomp
+  .sdarch .sdphys .sdconvex .sdraw
+
+================================================================================
+COMMON PATTERNS
+================================================================================
+
+### Scan Project Before Export
+```csharp
+var manager = new StridePackageManager(new ExportSettings { LibraryPath = projectPath });
+var validation = await manager.ValidateForExportAsync(projectPath);
+
+if (!validation.IsValid)
+{
+    Console.WriteLine(validation.GetReport());
+    return;
+}
+
+var scanResult = manager.ScanProject(projectPath);
+Console.WriteLine($"Files: {scanResult.FileCount}, Size: {scanResult.TotalSize}");
+```
+
+### Search Registry
+```csharp
+var manager = new StridePackageManager(new ExportSettings());
+var packages = await manager.SearchPackagesAsync("particle");
+
+foreach (var pkg in packages)
+    Console.WriteLine($"{pkg.Name} v{pkg.Version} - {pkg.Description}");
+```
+
+### Filter by Tags
+```csharp
+var effects = await manager.FilterPackagesByTagsAsync(new List<string> { "effects", "VFX" });
+```
+
+### Download and Cache
+```csharp
+var packages = await manager.GetRegistryPackagesAsync();
+var pkg = packages.First(p => p.Name == "MyLibrary");
+
+if (!manager.IsPackageCached(pkg))
+{
+    await manager.DownloadPackageToCacheAsync(pkg);
+}
+
+var result = await manager.InstallCachedPackageAsync(pkg, targetProjectPath);
+```
+
+### Cleanup Orphaned Resources
+```csharp
+var cleanup = new ProjectCleanupService(projectPath);
+var analysis = await cleanup.AnalyzeProjectAsync();
+
+Console.WriteLine($"Found {analysis.OrphanedResources.Count} orphaned files");
+Console.WriteLine($"Total orphan size: {analysis.TotalOrphanedSize} bytes");
+
+if (analysis.HasIssues)
+{
+    var result = await cleanup.DeleteOrphansAsync(analysis.OrphanedResources);
+    Console.WriteLine($"Deleted {result.DeletedFiles.Count} files");
+}
+```
+
+### Verify Package Integrity
+```csharp
+var isValid = await manager.VerifyPackageIntegrityAsync(packagePath);
+if (!isValid)
+    Console.WriteLine("Package corrupted or tampered with!");
+```
+
