@@ -180,8 +180,9 @@ namespace HS.Stride.Packer.Core
                     sourcePath = sourcePath.Substring(5).Trim();
                 }
 
-                // Skip if it's a null reference or empty
-                if (string.IsNullOrEmpty(sourcePath) || sourcePath == "null")
+                // Skip if it's a null reference, empty, or a YAML type tag (e.g. !SpriteFromTexture, !SpriteFromSheet)
+                // These are asset-to-asset references, not file resource paths
+                if (string.IsNullOrEmpty(sourcePath) || sourcePath == "null" || sourcePath.StartsWith("!"))
                     continue;
 
                 references.Add(new ResourceReference
