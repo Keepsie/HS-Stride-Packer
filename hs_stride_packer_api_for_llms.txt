@@ -1,6 +1,6 @@
 HS STRIDE PACKER CORE - LLM API REFERENCE
 =========================================
-Version: 1.0.0 | .NET 8.0 | Package: HS.Stride.Packer.Core
+Version: 1.3.0 | .NET 8.0 | Package: HS.Stride.Packer.Core | NuGet: dotnet add package HS.Stride.Packer.Core --version 1.3.0
 Copyright (c) 2025 Happenstance Games LLC | Apache License 2.0
 
 Create, import, and manage Stride game engine packages (.stridepackage files).
